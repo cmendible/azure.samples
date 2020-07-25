@@ -4,6 +4,8 @@ namespace Function.DaprSecret
     using Microsoft.Extensions.Logging;
     using Dapr.AzureFunctions.Extension;
     using System.Collections.Generic;
+    using Microsoft.Azure.WebJobs.Extensions.Http;
+    using Microsoft.AspNetCore.Http;
 
     public static class GetSecret
     {
@@ -12,7 +14,7 @@ namespace Function.DaprSecret
         /// </summary>
         [FunctionName("GetSecret")]
         public static void Run(
-            [DaprServiceInvocationTrigger] object args,
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "secret")] HttpRequest req,
             [DaprSecret("demosecrets", "redisPass")] IDictionary<string, string> secret,
             ILogger log)
         {
