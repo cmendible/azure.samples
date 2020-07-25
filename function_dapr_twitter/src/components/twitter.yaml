@@ -1,0 +1,23 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: twitter
+spec:
+  type: bindings.twitter
+  metadata:
+    - name: consumerKey
+      secretKeyRef:
+        name: consumerKey
+    - name: consumerSecret
+      secretKeyRef:
+        name: consumerSecret
+    - name: accessToken
+      secretKeyRef:
+        name: accessToken
+    - name: accessSecret
+      secretKeyRef:
+        name: accessSecret
+    - name: query
+      value: "Santiago" # your search query, required
+auth:
+    secretStore: demosecrets
