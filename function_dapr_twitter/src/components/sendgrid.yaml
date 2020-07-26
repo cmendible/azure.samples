@@ -1,0 +1,18 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: sendgrid
+spec:
+  type: bindings.twilio.sendgrid
+  metadata:
+    - name: emailFrom
+      value: "carlos@mendible.com"
+    - name: emailTo
+      value: "carlos@mendible.com"
+    - name: subject
+      value: "Negative Tweet"
+    - name: apiKey
+      secretKeyRef:
+        name: sendgridKey
+auth:
+    secretStore: demosecrets

@@ -19,6 +19,7 @@ namespace Function.ReadTwitter
         public static async Task Run(
             [DaprTopicTrigger(Topic = "feed")] CloudEvent @event,
             [DaprSecret("demosecrets", "cognitiveServicesKey")] IDictionary<string, string> secret,
+            [DaprBinding(BindingName = "sendgrid", Operation = "create")] IAsyncCollector<DaprBindingMessage> messages,
             ILogger log)
         {
             var credentials = new ApiKeyServiceClientCredentials(secret["cognitiveServicesKey"]);
@@ -31,6 +32,11 @@ namespace Function.ReadTwitter
 
             var result = await client.SentimentAsync(tweet.Text);
             log.LogInformation($"Sentiment Score: {result.Score:0.00}");
+
+            if (result.Score < 0.3)
+            {
+                await messages.AddAsync(new DaprBindingMessage($"Negative tweet: {tweet.Text} with score {result.Score:0.00}"));
+            }
         }
     }
 }
