@@ -18,6 +18,6 @@ spec:
       secretKeyRef:
         name: accessSecret
     - name: query
-      value: "Santiago" # your search query, required
+      value: "covid19" # your search query, required
 auth:
     secretStore: demosecrets
