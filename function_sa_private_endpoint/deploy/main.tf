@@ -44,7 +44,7 @@ resource "azurerm_subnet" "endpoint" {
   enforce_private_link_endpoint_network_policies = true
 }
 
-# Get current public IP. We´ll need this so we can access the Storage Account from our PC.
+# Get current public IP. We'll need this so we can access the Storage Account from our PC.
 data "http" "current_public_ip" {
   url = "http://ipinfo.io/json"
   request_headers = {
@@ -148,7 +148,7 @@ resource "azurerm_storage_blob" "function" {
   source                 = "./securecopy.zip"
 }
 
-# Create a SAS token so the Fucntion can access the blob and deploy the zip
+# Create a SAS token so the Function can access the blob and deploy the zip
 data "azurerm_storage_account_sas" "sas" {
   connection_string = azurerm_storage_account.function_required_sa.primary_connection_string
   https_only        = false
