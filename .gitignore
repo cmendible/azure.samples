@@ -265,5 +265,5 @@ __pycache__/
 
 # Terrafom
 *.tfstate
-*.tfstate.Backup
+*.tfstate.*
 .terraform/
