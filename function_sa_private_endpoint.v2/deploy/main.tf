@@ -194,7 +194,7 @@ resource "azurerm_app_service_plan" "plan" {
 
 # Create Application Insights
 resource "azurerm_application_insights" "ai" {
-  name                = "func-pe-test"
+  name                = var.func_name
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   application_type    = "web"
@@ -203,7 +203,7 @@ resource "azurerm_application_insights" "ai" {
 
 # Create the Azure Function App
 resource "azurerm_function_app" "func_app" {
-  name                       = "func-pe-test"
+  name                       = var.func_name
   location                   = azurerm_resource_group.rg.location
   resource_group_name        = azurerm_resource_group.rg.name
   app_service_plan_id        = azurerm_app_service_plan.plan.id
