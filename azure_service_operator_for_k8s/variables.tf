@@ -1,5 +1,5 @@
 variable resource_group_name {
-  default = "<resource group wher aks is deployed>"
+  default = "<resource group where aks is deployed>"
 }
 
 variable cluster_name {
