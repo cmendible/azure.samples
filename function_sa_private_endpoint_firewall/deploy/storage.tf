@@ -41,15 +41,16 @@ resource "azurerm_storage_account" "function_required_sa" {
   enable_https_traffic_only = true
 
   # We are enabling the firewall only allowing traffic from service subnet.
-  network_rules {
-    default_action             = "Deny"
-    virtual_network_subnet_ids = [
-      azurerm_subnet.service.id
-    ]
-    ip_rules = [
-      jsondecode(data.http.current_public_ip.body).ip
-    ]
-  }
+  # # Deploy in a second step
+  # network_rules {
+  #   default_action             = "Deny"
+  #   virtual_network_subnet_ids = [
+  #     azurerm_subnet.service.id
+  #   ]
+  #   ip_rules = [
+  #     jsondecode(data.http.current_public_ip.body).ip
+  #   ]
+  # }
 }
 
 # Create a container to hold the Azure Function Zip

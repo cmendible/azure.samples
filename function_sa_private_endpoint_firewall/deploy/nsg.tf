@@ -53,11 +53,12 @@ resource "azurerm_network_security_group" "service" {
   }
 }
 
-# Attach NSG to the service subnet
-resource "azurerm_subnet_network_security_group_association" "service" {
-  subnet_id                 = azurerm_subnet.service.id
-  network_security_group_id = azurerm_network_security_group.service.id
-}
+# # Attach NSG to the service subnet
+# # Deploy in a second step
+# resource "azurerm_subnet_network_security_group_association" "service" {
+#   subnet_id                 = azurerm_subnet.service.id
+#   network_security_group_id = azurerm_network_security_group.service.id
+# }
 
 # Create NSG for the endpoint subnet
 resource "azurerm_network_security_group" "endpoint" {
