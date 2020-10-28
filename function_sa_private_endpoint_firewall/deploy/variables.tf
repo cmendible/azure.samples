@@ -17,3 +17,8 @@ variable function_required_sa {
 variable function_name {
   default = "private-webapp-231418"
 }
+
+variable "sa_firewall_enabled" {
+  default = false
+  type    = bool
+}
