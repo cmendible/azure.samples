@@ -17,7 +17,7 @@ namespace Function.ReadTwitter
         /// </summary>
         [FunctionName("AnalyzeTweet")]
         public static async Task Run(
-            [DaprTopicTrigger(Topic = "feed")] CloudEvent @event,
+            [DaprTopicTrigger("messagebus", Topic = "feed")] CloudEvent @event,
             [DaprSecret("demosecrets", "cognitiveServicesKey")] IDictionary<string, string> secret,
             [DaprBinding(BindingName = "sendgrid", Operation = "create")] IAsyncCollector<DaprBindingMessage> messages,
             ILogger log)

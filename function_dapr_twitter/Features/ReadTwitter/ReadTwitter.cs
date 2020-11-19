@@ -15,7 +15,7 @@ namespace Function.ReadTwitter
         public static async Task Run(
             [DaprBindingTrigger(BindingName = "twitter")] TwitterQueryResponse twitterResponse,
             [DaprState("statestore", Key = "{twitterResponse.IdStr}")] IAsyncCollector<Tweet> state,
-            [DaprPublish(Topic = "feed")] IAsyncCollector<DaprPubSubEvent> tweetEvent,
+            [DaprPublish(PubSubName = "messagebus",  Topic = "feed")] IAsyncCollector<DaprPubSubEvent> tweetEvent,
             ILogger log)
         {
             log.LogInformation("C# function processed a ReadTwitter request from the Dapr Runtime.");
@@ -33,8 +33,6 @@ namespace Function.ReadTwitter
             await state.AddAsync(tweet);
 
             await tweetEvent.AddAsync(new DaprPubSubEvent(JsonSerializer.Serialize(tweet)));
-
-            // https://github.com/mchmarny/dapr-pipeline/blob/master/src/processor/handler.go
         }
     }
 }
