@@ -6,11 +6,6 @@
             "type": "coreclr",
             "request": "attach",
             "processId": "${command:azureFunctions.pickProcess}"
-        },
-        {
-            "name": "Local Process with Kubernetes",
-            "type": "local-process-with-kubernetes.configuration",
-            "request": "launch"
         }
     ]
 }

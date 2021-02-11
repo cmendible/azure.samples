@@ -66,7 +66,7 @@
 			},
 			"command": "host start",
 			"isBackground": true,
-			"problemMatcher": "$func-watch"
+			"problemMatcher": "$func-dotnet-watch"
 		}
 	]
 }

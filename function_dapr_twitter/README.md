@@ -2,13 +2,13 @@
 ## Run Function App with Dapr
 
 ```shell
-dapr run -a functionapp -p 3001 --components-path .\components\ -- func host start
+dapr run -a functionapp -p 3001 -H 3501 --components-path .\components\ --config .\config.yaml -- func host start
 ```
 
 or 
 
 ```shell
-dapr run -a functionapp -p 3001 --components-path .\components\
+dapr run -a functionapp -p 3001 -H 3501 --components-path .\components\ --config .\config.yaml
 ```
 
 ----
@@ -37,7 +37,7 @@ func new -l c# -n ReadTwitter
 
 ---
 
-dapr run -a functionapp -p 3001 --components-path .\components\ -- func host start
+dapr run -a functionapp -p 3001 -H 3501 --components-path .\components\ --config .\config.yaml -- func host start
 
 ---
 
