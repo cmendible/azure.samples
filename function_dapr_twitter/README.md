@@ -27,6 +27,12 @@ func new -l c# -n ReadTwitter
 
 ---
 
+Copy TwitterQueryResponse.cs
+
+Copy components foldeer
+
+[DaprBindingTrigger(BindingName = "twitter")] TwitterQueryResponse twitterResponse,
+
  var content = twitterResponse.FullText;
             if (content == "")
             {
@@ -58,7 +64,7 @@ await tweetEvent.AddAsync(new DaprPubSubEvent(JsonSerializer.Serialize(tweet)));
 
 ---
 
-func new -l csharp
+func new -l c# -n AnalizeTweet
 
 [DaprTopicTrigger("messagebus", Topic = "feed")] CloudEvent @event,
 
