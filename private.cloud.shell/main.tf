@@ -37,7 +37,7 @@ resource "azurerm_subnet" "containers" {
   service_endpoints = ["Microsoft.Storage"]
 }
 
-# Create a subnet to host Azure Realy service.
+# Create a subnet to host Azure Relay service.
 resource "azurerm_subnet" "relay" {
   name                 = "relay"
   resource_group_name  = azurerm_resource_group.rg.name
@@ -70,7 +70,7 @@ resource "azurerm_role_assignment" "network_contributor" {
   principal_id         = data.azuread_service_principal.container.object_id
 }
 
-# Create Azure Realy namespace.
+# Create Azure Relay namespace.
 resource "azurerm_relay_namespace" "relay" {
   name                = var.relay_name
   location            = azurerm_resource_group.rg.location
@@ -167,7 +167,7 @@ resource "azurerm_private_dns_zone_virtual_network_link" "relay" {
   virtual_network_id    = azurerm_virtual_network.vnet.id
 }
 
-# Open the realy firewall to local IP
+# Open the relay firewall to local IP
 resource "null_resource" "open_relay_firewall" {
   provisioner "local-exec" {
     interpreter = ["powershell"]
