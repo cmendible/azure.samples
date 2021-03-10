@@ -21,7 +21,8 @@ resource "azurerm_subnet" "service" {
   virtual_network_name = azurerm_virtual_network.vnet.name
   address_prefixes     = ["10.0.1.0/24"]
 
-  enforce_private_link_service_network_policies = true
+  enforce_private_link_service_network_policies  = true
+  enforce_private_link_endpoint_network_policies = true
 
   # Delegate the subnet to "Microsoft.Web/serverFarms"
   delegation {
@@ -41,6 +42,7 @@ resource "azurerm_subnet" "endpoint" {
   virtual_network_name = azurerm_virtual_network.vnet.name
   address_prefixes     = ["10.0.2.0/24"]
 
+  enforce_private_link_service_network_policies  = false
   enforce_private_link_endpoint_network_policies = true
 }
 
@@ -63,6 +65,7 @@ resource "azurerm_storage_account" "sa" {
   # We are enabling the firewall only allowing traffic from our PC's public IP.
   network_rules {
     default_action             = var.sa_firewall_enabled ? "Deny" : "Allow"
+    bypass                     = ["AzureServices"]
     virtual_network_subnet_ids = []
     ip_rules = [
       jsondecode(data.http.current_public_ip.body).ip
@@ -98,28 +101,22 @@ resource "azurerm_private_endpoint" "endpoint" {
     is_manual_connection           = false
     subresource_names              = [var.sa_services[count.index]]
   }
+
+  depends_on = [azurerm_storage_share.functions]
 }
 
 # Create the blob.core.windows.net Private DNS Zone
 resource "azurerm_private_dns_zone" "private" {
-  name                = "core.windows.net"
+  count               = length(var.sa_services)
+  name                = "privatelink.${var.sa_services[count.index]}.core.windows.net"
   resource_group_name = azurerm_resource_group.rg.name
 }
 
 # Create an A record pointing to each Storage Account service private endpoint
 resource "azurerm_private_dns_a_record" "sa" {
   count               = length(var.sa_services)
-  name                = "${var.sa_name}.${var.sa_services[count.index]}"
-  zone_name           = azurerm_private_dns_zone.private.name
-  resource_group_name = azurerm_resource_group.rg.name
-  ttl                 = 3600
-  records             = [azurerm_private_endpoint.endpoint[count.index].private_service_connection[0].private_ip_address]
-}
-
-resource "azurerm_private_dns_a_record" "sa_privatelink" {
-  count               = length(var.sa_services)
-  name                = "${var.sa_name}.privatelink.${var.sa_services[count.index]}"
-  zone_name           = azurerm_private_dns_zone.private.name
+  name                = var.sa_name
+  zone_name           = azurerm_private_dns_zone.private[count.index].name
   resource_group_name = azurerm_resource_group.rg.name
   ttl                 = 3600
   records             = [azurerm_private_endpoint.endpoint[count.index].private_service_connection[0].private_ip_address]
@@ -127,55 +124,17 @@ resource "azurerm_private_dns_a_record" "sa_privatelink" {
 
 # Link the Private Zone with the VNet
 resource "azurerm_private_dns_zone_virtual_network_link" "sa" {
-  name                  = "test"
+  count                 = length(var.sa_services)
+  name                  = "networklink-${azurerm_private_dns_zone.private[count.index].name}"
   resource_group_name   = azurerm_resource_group.rg.name
-  private_dns_zone_name = azurerm_private_dns_zone.private.name
+  private_dns_zone_name = azurerm_private_dns_zone.private[count.index].name
   virtual_network_id    = azurerm_virtual_network.vnet.id
+  registration_enabled  = false
 }
 
-# Create a container to hold the Azure Function Zip
-resource "azurerm_storage_container" "functions" {
-  name                  = "function-releases"
-  storage_account_name  = azurerm_storage_account.sa.name
-  container_access_type = "private"
-}
-
-# Create a blob with the Azure Function zip
-resource "azurerm_storage_blob" "function" {
-  name                   = "securecopy.zip"
-  storage_account_name   = azurerm_storage_account.sa.name
-  storage_container_name = azurerm_storage_container.functions.name
-  type                   = "Block"
-  source                 = "./securecopy.zip"
-}
-
-# Create a SAS token so the Function can access the blob and deploy the zip
-data "azurerm_storage_account_sas" "sas" {
-  connection_string = azurerm_storage_account.sa.primary_connection_string
-  https_only        = false
-  resource_types {
-    service   = false
-    container = false
-    object    = true
-  }
-  services {
-    blob  = true
-    queue = false
-    table = false
-    file  = false
-  }
-  start  = "2020-08-25"
-  expiry = "2025-05-18"
-  permissions {
-    read    = true
-    write   = false
-    delete  = false
-    list    = false
-    add     = false
-    create  = false
-    update  = false
-    process = false
-  }
+resource "azurerm_storage_share" "functions" {
+  name                 = "${var.func_name}-content"
+  storage_account_name = azurerm_storage_account.sa.name
 }
 
 # Create the Azure Function plan (Elastic Premium) 
@@ -190,6 +149,7 @@ resource "azurerm_app_service_plan" "plan" {
     size     = "EP1"
     capacity = 1
   }
+  maximum_elastic_worker_count = 20
 }
 
 # Create Application Insights
@@ -198,7 +158,6 @@ resource "azurerm_application_insights" "ai" {
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   application_type    = "web"
-  retention_in_days   = 90
 }
 
 # Create the Azure Function App
@@ -210,18 +169,23 @@ resource "azurerm_function_app" "func_app" {
   storage_account_name       = azurerm_storage_account.sa.name
   storage_account_access_key = azurerm_storage_account.sa.primary_access_key
   version                    = "~3"
+  https_only                 = true
 
   app_settings = {
-    https_only                     = true
-    APPINSIGHTS_INSTRUMENTATIONKEY = azurerm_application_insights.ai.instrumentation_key
-    privatecfm_STORAGE             = azurerm_storage_account.sa.primary_connection_string
-    # With this setting we'll force all outbound traffic through the VNet
-    WEBSITE_VNET_ROUTE_ALL = "1"
-    # WEBSITE_DNS_SERVER     = "168.63.129.16"
-    # Properties used to deploy the zip
-    HASH            = filesha256("./securecopy.zip")
-    WEBSITE_USE_ZIP = "https://${azurerm_storage_account.sa.name}.blob.core.windows.net/${azurerm_storage_container.functions.name}/${azurerm_storage_blob.function.name}${data.azurerm_storage_account_sas.sas.sas}"
+    APPINSIGHTS_INSTRUMENTATIONKEY        = azurerm_application_insights.ai.instrumentation_key
+    APPLICATIONINSIGHTS_CONNECTION_STRING = "InstrumentationKey='${azurerm_application_insights.ai.instrumentation_key}'"
+    FUNCTIONS_WORKER_RUNTIME = "dotnet"
+    WEBSITE_VNET_ROUTE_ALL  = "1"
+    WEBSITE_CONTENTOVERVNET = "1"
+    WEBSITE_DNS_SERVER      = "168.63.129.16"
   }
+
+  depends_on = [
+    azurerm_storage_account.sa,
+    azurerm_private_endpoint.endpoint,
+    azurerm_private_dns_a_record.sa,
+    azurerm_private_dns_zone_virtual_network_link.sa
+  ]
 }
 
 # Enable Regional VNet integration. Function --> service Subnet 
