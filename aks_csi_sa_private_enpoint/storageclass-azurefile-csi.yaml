@@ -1,3 +1,4 @@
+# Based on: https://github.com/kubernetes-sigs/azurefile-csi-driver/blob/master/deploy/example/storageclass-azurefile-existing-share.yaml
 ---
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
@@ -8,9 +9,9 @@ allowVolumeExpansion: true
 parameters:
   resourceGroup: <resourceGroup>  # optional, only set this when storage account is not in the same resource group as agent node
   storageAccount: <storageAccountName>
-  # shareName: SHARE_NAME
-  server: <storageAccountName>.privatelink.file.core.windows.net
-  # useDataPlaneAPI: "true"
+  # Check driver parameters here:
+  # https://github.com/kubernetes-sigs/azurefile-csi-driver/blob/master/docs/driver-parameters.md
+  server: <storageAccountName>.privatelink.file.core.windows.net 
 reclaimPolicy: Delete
 volumeBindingMode: Immediate
 mountOptions:
