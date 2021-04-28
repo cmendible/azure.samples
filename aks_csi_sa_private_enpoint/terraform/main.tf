@@ -135,7 +135,7 @@ resource "azurerm_role_assignment" "aks_kubelet_contributor" {
 # Deploy Storage Class and sample PVC
 resource "null_resource" "csi_storage_class_sample" {
   provisioner "local-exec" {
-    command = "sed 's/<resourceGroup>/${var.resource_group}/;s/<storageAccountName>/${var.sa_name}/' ./storageclass-azurefile-csi.yaml | kubectl apply -f -"
+    command = "sed 's/<resourceGroup>/${var.resource_group}/;s/<storageAccountName>/${var.sa_name}/' ../storageclass-azurefile-csi.yaml | kubectl apply -f -"
   }
 
   depends_on = [
