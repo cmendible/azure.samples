@@ -4,7 +4,7 @@ resource "azurerm_resource_group" "rg" {
   location = var.location
 }
 
-# Create VNet
+# Create VNET for AKS
 resource "azurerm_virtual_network" "vnet" {
   name                = "private-network"
   address_space       = ["10.0.0.0/8"]
@@ -12,7 +12,7 @@ resource "azurerm_virtual_network" "vnet" {
   resource_group_name = azurerm_resource_group.rg.name
 }
 
-# Create the Subnet for AKS. This is the subnet where we'll enable Vnet Integration.
+# Create the Subnet for AKS.
 resource "azurerm_subnet" "aks" {
   name                 = "aks"
   resource_group_name  = azurerm_resource_group.rg.name
@@ -20,6 +20,8 @@ resource "azurerm_subnet" "aks" {
   address_prefixes     = ["10.240.0.0/16"]
 }
 
+# Create the AKS cluster.
+# Cause this is a test node_count is set to 1 
 resource "azurerm_kubernetes_cluster" "aks" {
   name                = var.aks_name
   location            = azurerm_resource_group.rg.location
@@ -35,6 +37,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
     vnet_subnet_id  = azurerm_subnet.aks.id
   }
 
+  # Using Managed Identity
   identity {
     type = "SystemAssigned"
   }
@@ -66,7 +69,7 @@ resource "azuread_service_principal" "kubecost" {
   application_id = azuread_application.kubecost.application_id
 }
 
-# Create Password
+# Generate password for the Service Principal
 resource "random_password" "passwd" {
   length      = 32
   min_upper   = 4
@@ -110,7 +113,7 @@ resource "azurerm_role_definition" "kubecost" {
   ]
 }
 
-# Assign kubecost's custom role
+# Assign kubecost's custom role at the subscription level
 resource "azurerm_role_assignment" "kubecost" {
   scope                = data.azurerm_subscription.current.id
   role_definition_name = azurerm_role_definition.kubecost.name
