@@ -11,7 +11,7 @@ resource "azurerm_virtual_network" "vnet" {
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   # Use Private DNS Zone. That's right we have to add this magical IP here.
-  dns_servers = ["168.63.129.16"]
+  # dns_servers = ["168.63.129.16"]
 }
 
 # Create the Subnet for the Azure Function. This is thge subnet where we'll enable Vnet Integration.
@@ -32,6 +32,9 @@ resource "azurerm_subnet" "service" {
       actions = ["Microsoft.Network/virtualNetworks/subnets/action"]
     }
   }
+
+  # Why on earth is this neeed now? 
+  service_endpoints = ["Microsoft.Storage"]
 }
 
 # Create the Subnet for the private endpoints. This is where the IP of the private enpoint will live.
@@ -101,8 +104,16 @@ resource "azurerm_private_endpoint" "endpoint" {
 
 # Create the blob.core.windows.net Private DNS Zone
 resource "azurerm_private_dns_zone" "private" {
-  name                = "blob.core.windows.net"
+  name                = "privatelink.blob.core.windows.net"
   resource_group_name = azurerm_resource_group.rg.name
+}
+
+resource "azurerm_private_dns_cname_record" "cname" {
+  name                = "${var.sa_name}.blob.core.windows.net"
+  zone_name           = azurerm_private_dns_zone.private.name
+  resource_group_name = azurerm_resource_group.rg.name
+  ttl                 = 300
+  record              = "${var.sa_name}.privatelink.blob.core.windows.net"
 }
 
 # Create an A record pointing to the Storage Account private endpoint
@@ -216,6 +227,7 @@ resource "azurerm_function_app" "func_app" {
     privatecfm_STORAGE             = azurerm_storage_account.sa.primary_connection_string
     # With this setting we'll force all outbound traffic through the VNet
     WEBSITE_VNET_ROUTE_ALL = "1"
+    WEBSITE_DNS_SERVER     = "168.63.129.16"
     # Properties used to deploy the zip
     HASH            = filesha256("./securecopy.zip")
     WEBSITE_USE_ZIP = "https://${azurerm_storage_account.function_required_sa.name}.blob.core.windows.net/${azurerm_storage_container.functions.name}/${azurerm_storage_blob.function.name}${data.azurerm_storage_account_sas.sas.sas}"
