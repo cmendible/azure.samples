@@ -267,3 +267,6 @@ __pycache__/
 *.tfstate
 *.tfstate.*
 .terraform/
+
+# Environment
+env.conf
