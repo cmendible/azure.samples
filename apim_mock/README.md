@@ -25,3 +25,10 @@ apim_url=$(terraform output -raw url)
 key=<Get Built-in all-access subscription key from portal>
 curl -k -i -H "Ocp-Apim-Subscription-Key: $key" $apim_url
 ```
+
+``` shell
+docker run -d -p 8080:8080 -p 8081:8081 --name apim-docker-test --env-file env.conf mcr.microsoft.com/azure-api-management/gateway:latest
+key=<Get Built-in all-access subscription key from portal>
+curl -k -i -H "Ocp-Apim-Subscription-Key: $key" https://localhost:8081/mock
+curl -k -i -H "Ocp-Apim-Subscription-Key: $key" https://localhost:8081/ip
+```
