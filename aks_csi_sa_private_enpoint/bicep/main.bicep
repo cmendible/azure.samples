@@ -166,12 +166,11 @@ resource aks 'Microsoft.ContainerService/managedClusters@2021-02-01' = {
 
 // Built-in Role Definition IDs
 // https://docs.microsoft.com/en-us/azure/role-based-access-control/built-in-roles
-var owner = '/subscriptions/${subscription().subscriptionId}/providers/Microsoft.Authorization/roleDefinitions/8e3af657-a8ff-443c-a75c-2fe8c4bcb635'
 var contributor = '/subscriptions/${subscription().subscriptionId}/providers/Microsoft.Authorization/roleDefinitions/b24988ac-6180-42a0-ab88-20f7382dd24c'
 
 // Set AKS kubelet Identity as SA Contributor
 resource aks_kubelet_sa_contributor 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = {
-  name: guid('aks_saaks_kubelet_contributor_owner')
+  name: guid('${aks_name}_kubelet_sa_contributor')
   scope: sa
   properties: {
     principalId: reference(aks.id, '2021-02-01', 'Full').properties.identityProfile['kubeletidentity'].objectId
