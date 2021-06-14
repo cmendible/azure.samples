@@ -1,0 +1,61 @@
+---
+# Worker Application
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: signalr-server
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: signalr-server
+  template:
+    metadata:
+      labels:
+        app: signalr-server
+    spec:
+      containers:
+        - name: signalr-server
+          image: cmendibl3/signalr-server
+          ports:
+            - name: http
+              containerPort: 80
+          imagePullPolicy: "Always"
+          env:
+            - name: Logging__LogLevel__Microsoft.AspNetCore.SignalR
+              value: Debug
+            - name: Logging__LogLevel__Microsoft.AspNetCore.Http.Connections
+              value: Debug
+            - name: RedisPassword
+              value: 
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: signalr-server
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 80
+  selector:
+    app: signalr-server
+
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: signal-ingress
+  annotations:
+    # Service are serving content in this path.
+    # appgw.ingress.kubernetes.io/backend-path-prefix: "/"
+    kubernetes.io/ingress.class: azure/application-gateway
+    appgw.ingress.kubernetes.io/cookie-based-affinity: "true"
+spec:
+  rules:
+    - http:
+        paths:
+          - backend:
+              serviceName: signalr-server
+              servicePort: 80

@@ -1,0 +1,22 @@
+---
+# Worker Application
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: signalr-client
+spec:
+  replicas: 500
+  selector:
+    matchLabels:
+      app: signalr-client
+  template:
+    metadata:
+      labels:
+        app: signalr-client
+    spec:
+      containers:
+        - name: signalr-client
+          image: cmendibl3/signalr-client
+          env:
+            - name: AGIC_IP
+              value: ""
