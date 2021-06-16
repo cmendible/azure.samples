@@ -15,7 +15,7 @@ app.listen(port, err => {
 
 var signalR = require('@microsoft/signalr');
 
-const username = new Date().getTime();
+const username = new Date().getTime().toString();
 
 const AGIC_IP = process.env.AGIC_IP;
 
@@ -29,6 +29,16 @@ connection.on("Send", (message) => {
   console.log(message);
 });
 
+async function noise() {
+  try {
+    await connection.invoke("Echo", username, "YADA YADA YADA");
+  } catch (err) {
+    console.error(err);
+  }
+
+  setTimeout(noise, 30000);
+}
+
 async function start() {
   try {
     await connection.start();
@@ -36,6 +46,8 @@ async function start() {
   } catch (err) {
     console.log(err);
   }
+
+  await noise();
 };
 
 // Start the connection.
