@@ -51,7 +51,7 @@ data "azurerm_resource_group" "node_resource_group_clients" {
 }
 
 # Assign the Contributor role to the AKS kubelet identity
-resource "azurerm_role_assignment" "kubelet_contributor" {
+resource "azurerm_role_assignment" "kubelet_contributor_clients" {
   scope                = data.azurerm_resource_group.node_resource_group_clients.id
   role_definition_name = "Contributor" #"Virtual Machine Contributor"?
   principal_id         = azurerm_kubernetes_cluster.k8s_clients.kubelet_identity[0].object_id
