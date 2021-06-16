@@ -92,8 +92,8 @@ public class Chat : Hub
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, groupName);
     }
 
-    public Task Echo(string name, string message)
+    public async Task Echo(string name, string message)
     {
-        return Clients.Caller.SendAsync("Send", $"{name}: {message}");
+        await Clients.Caller.SendAsync("Send", $"{name}: {message}");
     }
 }
