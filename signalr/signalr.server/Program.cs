@@ -21,23 +21,22 @@ ConfigureServices(services =>
     })
     // .AddStackExchangeRedis($"redis-master.redis.svc.cluster.local,password={redisPassword}");
     .AddAzureSignalR();
-}).
-Configure(app =>
+})
+.Configure(app =>
 {
-    // app.UseHttpsRedirection();
+    app.UseHttpsRedirection();
 
     app.UseRouting();
 
     app.UseEndpoints(endpoints =>
     {
         endpoints.MapHub<Chat>("/default", options =>
-            {
-                options.Transports = HttpTransportType.WebSockets;
-            });
+            options.Transports = HttpTransportType.WebSockets);
 
         endpoints.MapGet("/", c => c.Response.WriteAsync("Hello from SignalR!"));
     });
-}).Build().Run();
+})
+.Build().Run();
 
 public class Chat : Hub
 {
