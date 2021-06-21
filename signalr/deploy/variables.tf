@@ -29,3 +29,7 @@ variable "agent_count" {
 variable "key_vault_name" {
   default = "aks-signalr-war-kv"
 }
+
+variable "signalr_name" {
+  default = "war-signalr"
+}
