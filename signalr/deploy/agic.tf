@@ -69,6 +69,19 @@ resource "azurerm_application_gateway" "agic" {
     backend_address_pool_name  = local.backend_address_pool_name
     backend_http_settings_name = local.http_setting_name
   }
+
+  lifecycle {
+    ignore_changes = [
+      # Ignore changes to tags, e.g. because a management agent
+      # updates these based on some ruleset managed elsewhere.
+      tags,
+      backend_address_pool,
+      backend_http_settings,
+      http_listener,
+      probe,
+      request_routing_rule,
+    ]
+  }
 }
 
 # Assign Contributor role to the Managed Identity

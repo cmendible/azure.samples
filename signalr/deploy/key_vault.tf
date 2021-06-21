@@ -40,6 +40,12 @@ resource "azurerm_key_vault" "kv" {
 
     storage_permissions = []
   }
+
+  lifecycle {
+    ignore_changes = [
+      access_policy
+    ]
+  }
 }
 
 resource "azurerm_key_vault_secret" "redis" {
