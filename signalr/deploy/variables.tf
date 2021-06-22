@@ -27,7 +27,7 @@ variable "agent_count" {
 }
 
 variable "key_vault_name" {
-  default = "aks-signalr-war-kv"
+  default = "cfm-signalr-war-kv"
 }
 
 variable "signalr_name" {
