@@ -13,14 +13,20 @@ using System;
 WebHost.CreateDefaultBuilder().
 ConfigureServices(services =>
 {
-    var redisPassword = Environment.GetEnvironmentVariable("RedisPassword");
-
-    services.AddSignalR(hubOptions =>
+    var signalRServiceBuilder = services.AddSignalR(hubOptions =>
     {
         hubOptions.EnableDetailedErrors = true;
-    })
-    // .AddStackExchangeRedis($"redis-master.redis.svc.cluster.local,password={redisPassword}");
-    .AddAzureSignalR();
+    });
+
+    var redisPassword = Environment.GetEnvironmentVariable("RedisPassword");
+    if (string.IsNullOrEmpty(redisPassword))
+    {
+        signalRServiceBuilder.AddAzureSignalR();
+    }
+    else
+    {
+        signalRServiceBuilder.AddStackExchangeRedis($"redis-master.redis.svc.cluster.local,password={redisPassword}");
+    }
 })
 .Configure(app =>
 {
