@@ -30,7 +30,7 @@ resource "azurerm_private_endpoint" "signalr_endpoint" {
     name                           = "signalr-peconnection"
     private_connection_resource_id = azurerm_signalr_service.signalr.id
     is_manual_connection           = false
-    subresource_names              = ["SignalR"]
+    subresource_names              = ["signalr"]
   }
 
   private_dns_zone_group {
