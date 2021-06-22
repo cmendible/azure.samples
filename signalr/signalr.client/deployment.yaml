@@ -5,7 +5,7 @@ kind: Deployment
 metadata:
   name: signalr-client
 spec:
-  replicas: 500
+  replicas: 400
   selector:
     matchLabels:
       app: signalr-client
