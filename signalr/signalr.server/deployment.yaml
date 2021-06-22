@@ -34,7 +34,9 @@ spec:
             - name: Logging__LogLevel__Microsoft.AspNetCore.Http.Connections
               value: Debug
             - name: RedisPassword
-              value: oz4yV2HEPv
+              value: ""
+            - name: Azure__SignalR__ConnectionString
+              value: ""
           readinessProbe:
             httpGet:
               path: /
