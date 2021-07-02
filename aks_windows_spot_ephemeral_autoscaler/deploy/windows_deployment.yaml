@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: servercore
+  labels:
+    app: servercore
+spec:
+  replicas: 1
+  template:
+    metadata:
+      name: servercore
+      labels:
+        app: servercore
+    spec:
+      nodeSelector:
+        "kubernetes.azure.com/scalesetpriority": "spot"
+      containers:
+      - name: servercore
+        image: mcr.microsoft.com/dotnet/framework/samples:aspnetapp
+        resources:
+          limits:
+            cpu: 1
+            memory: 800M
+          requests:
+            cpu: .1
+            memory: 150M
+        ports:
+          - containerPort: 80
+      tolerations:
+        - key: "kubernetes.azure.com/scalesetpriority"
+          operator: "Equal"
+          value: "spot"
+          effect: "NoSchedule"
+  selector:
+    matchLabels:
+      app: servercore
