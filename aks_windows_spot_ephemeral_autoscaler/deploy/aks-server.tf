@@ -58,7 +58,7 @@ resource "azurerm_kubernetes_cluster_node_pool" "windows" {
   # https://docs.microsoft.com/en-us/azure/virtual-machines/ephemeral-os-disks#size-requirements
   vm_size             = "Standard_DS3_v2"
   os_disk_type        = "Ephemeral"
-  node_count          = 1
+  node_count          = 0
   enable_auto_scaling = true
   max_count           = 3
   min_count           = 0
