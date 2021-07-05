@@ -18,14 +18,14 @@ ConfigureServices(services =>
         hubOptions.EnableDetailedErrors = true;
     });
 
-    var redisPassword = Environment.GetEnvironmentVariable("RedisPassword");
-    if (string.IsNullOrEmpty(redisPassword))
+    var redisConnectionString = Environment.GetEnvironmentVariable("redisConnectionString");
+    if (string.IsNullOrEmpty(redisConnectionString))
     {
         signalRServiceBuilder.AddAzureSignalR();
     }
     else
     {
-        signalRServiceBuilder.AddStackExchangeRedis($"redis-master.redis.svc.cluster.local,password={redisPassword}");
+        signalRServiceBuilder.AddStackExchangeRedis(redisConnectionString);
     }
 })
 .Configure(app =>
