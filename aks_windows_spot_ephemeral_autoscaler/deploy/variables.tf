@@ -17,3 +17,7 @@ variable "dns_prefix" {
 variable "agent_count" {
   default = 3
 }
+
+variable "log_workspace_name" {
+  default = "aks-win-logs"
+}
