@@ -14,7 +14,7 @@ resource "azurerm_virtual_network" "vnet" {
   # dns_servers = ["168.63.129.16"]
 }
 
-# Create the Subnet for the Azure Function. This is thge subnet where we'll enable Vnet Integration.
+# Create the Subnet for the Azure Function. This is the subnet where we'll enable Vnet Integration.
 resource "azurerm_subnet" "service" {
   name                 = "service"
   resource_group_name  = azurerm_resource_group.rg.name
@@ -87,6 +87,12 @@ resource "azurerm_storage_container" "output" {
   storage_account_name  = azurerm_storage_account.sa.name
 }
 
+# Create the blob.core.windows.net Private DNS Zone
+resource "azurerm_private_dns_zone" "private" {
+  name                = "privatelink.blob.core.windows.net"
+  resource_group_name = azurerm_resource_group.rg.name
+}
+
 # Create the Private endpoint. This is where the Storage account gets a private IP inside the VNet.
 resource "azurerm_private_endpoint" "endpoint" {
   name                = "sa-endpoint"
@@ -100,29 +106,11 @@ resource "azurerm_private_endpoint" "endpoint" {
     is_manual_connection           = false
     subresource_names              = ["blob"]
   }
-}
 
-# Create the blob.core.windows.net Private DNS Zone
-resource "azurerm_private_dns_zone" "private" {
-  name                = "privatelink.blob.core.windows.net"
-  resource_group_name = azurerm_resource_group.rg.name
-}
-
-resource "azurerm_private_dns_cname_record" "cname" {
-  name                = "${var.sa_name}.blob.core.windows.net"
-  zone_name           = azurerm_private_dns_zone.private.name
-  resource_group_name = azurerm_resource_group.rg.name
-  ttl                 = 300
-  record              = "${var.sa_name}.privatelink.blob.core.windows.net"
-}
-
-# Create an A record pointing to the Storage Account private endpoint
-resource "azurerm_private_dns_a_record" "sa" {
-  name                = var.sa_name
-  zone_name           = azurerm_private_dns_zone.private.name
-  resource_group_name = azurerm_resource_group.rg.name
-  ttl                 = 3600
-  records             = [azurerm_private_endpoint.endpoint.private_service_connection[0].private_ip_address]
+  private_dns_zone_group {
+    name                 = "privatelink-blob-core-windows-net"
+    private_dns_zone_ids = [azurerm_private_dns_zone.private.id]
+  }
 }
 
 # Link the Private Zone with the VNet
