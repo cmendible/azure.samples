@@ -17,3 +17,7 @@ variable "dns_prefix" {
 variable "log_workspace_name" {
   default = "aks-spot-logs"
 }
+
+variable "managed_identity_name" {
+  default = "aks-spot-mi"
+}
