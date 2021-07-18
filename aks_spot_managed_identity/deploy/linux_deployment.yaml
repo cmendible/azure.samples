@@ -11,6 +11,7 @@ spec:
       name: nginx
       labels:
         app: nginx
+        aadpodidbinding: aks-spot-mi
     spec:
       nodeSelector:
         "kubernetes.io/os": "linux"
