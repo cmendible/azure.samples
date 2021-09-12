@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Azure.SignalR;
 using System.Threading.Tasks;
 using System;
 
@@ -21,7 +22,11 @@ ConfigureServices(services =>
     var redisConnectionString = Environment.GetEnvironmentVariable("redisConnectionString");
     if (string.IsNullOrEmpty(redisConnectionString))
     {
-        signalRServiceBuilder.AddAzureSignalR();
+        signalRServiceBuilder.AddAzureSignalR(options =>
+        {
+            options.GracefulShutdown.Mode = GracefulShutdownMode.MigrateClients;
+            options.GracefulShutdown.Timeout = TimeSpan.FromSeconds(30);
+        });
     }
     else
     {
@@ -48,11 +53,23 @@ public class Chat : Hub
 {
     public override Task OnConnectedAsync()
     {
+        var feature = Context.Features.Get<IConnectionMigrationFeature>();
+        if (feature != null)
+        {
+            Console.WriteLine($"[{feature.MigrateTo}] {Context.ConnectionId} is migrated from {feature.MigrateFrom}.");
+        }
+
         return Clients.All.SendAsync("Send", $"joined the chat");
     }
 
     public override Task OnDisconnectedAsync(Exception exception)
     {
+        var feature = Context.Features.Get<IConnectionMigrationFeature>();
+        if (feature != null)
+        {
+            Console.WriteLine($"[{feature.MigrateFrom}] {Context.ConnectionId} will be migrated to {feature.MigrateTo}.");
+        }
+
         return Clients.All.SendAsync("Send", $"left the chat");
     }
 
