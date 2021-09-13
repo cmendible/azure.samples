@@ -40,10 +40,6 @@ resource "azurerm_kubernetes_cluster" "k8s" {
     kube_dashboard {
       enabled = false
     }
-    oms_agent {
-      enabled                    = true
-      log_analytics_workspace_id = azurerm_log_analytics_workspace.logs.id
-    }
   }
 }
 

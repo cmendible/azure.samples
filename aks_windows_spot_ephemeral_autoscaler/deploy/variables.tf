@@ -13,11 +13,3 @@ variable "cluster_name" {
 variable "dns_prefix" {
   default = "aks-win"
 }
-
-variable "agent_count" {
-  default = 3
-}
-
-variable "log_workspace_name" {
-  default = "aks-win-logs"
-}
