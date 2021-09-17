@@ -12,17 +12,15 @@ resource "azurerm_virtual_network" "vnet" {
   resource_group_name = azurerm_resource_group.rg.name
 }
 
-# Create the Subnet for the Azure Function. This is thge subnet where we'll enable Vnet Integration.
+# Create the Subnet for the jumpbox.
 resource "azurerm_subnet" "jump" {
   name                 = "jump"
   resource_group_name  = azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.vnet.name
   address_prefixes     = ["10.0.1.0/24"]
-
-  enforce_private_link_service_network_policies = true
 }
 
-# Create the Subnet for the private endpoints. This is where the IP of the private enpoint will live.
+# Create the Subnet for the private endpoints. This is where the IP of the private endpoint will live.
 resource "azurerm_subnet" "endpoint" {
   name                 = "endpoint"
   resource_group_name  = azurerm_resource_group.rg.name
@@ -69,6 +67,13 @@ resource "azurerm_storage_blob" "page" {
   source                 = "index.html"
 }
 
+# Create the privatelink.web.core.windows.net Private DNS Zone
+resource "azurerm_private_dns_zone" "private_web" {
+  name                = "privatelink.web.core.windows.net"
+  resource_group_name = azurerm_resource_group.rg.name
+}
+
+
 # Create the Private endpoint. This is where the Storage account gets a private IP inside the VNet.
 resource "azurerm_private_endpoint" "endpoint_web" {
   name                = "sa-endpoint_web"
@@ -82,29 +87,11 @@ resource "azurerm_private_endpoint" "endpoint_web" {
     is_manual_connection           = false
     subresource_names              = ["web"]
   }
-}
 
-# Create the blob.core.windows.net Private DNS Zone
-resource "azurerm_private_dns_zone" "private_web" {
-  name                = "privatelink.web.core.windows.net"
-  resource_group_name = azurerm_resource_group.rg.name
-}
-
-resource "azurerm_private_dns_cname_record" "cname_web" {
-  name                = "${var.sa_name}.z6.web.core.windows.net"
-  zone_name           = azurerm_private_dns_zone.private_web.name
-  resource_group_name = azurerm_resource_group.rg.name
-  ttl                 = 300
-  record              = "${var.sa_name}.privatelink.web.core.windows.net"
-}
-
-# Create an A record pointing to the Storage Account private endpoint
-resource "azurerm_private_dns_a_record" "sa_private_web" {
-  name                = var.sa_name
-  zone_name           = azurerm_private_dns_zone.private_web.name
-  resource_group_name = azurerm_resource_group.rg.name
-  ttl                 = 3600
-  records             = [azurerm_private_endpoint.endpoint_web.private_service_connection[0].private_ip_address]
+  private_dns_zone_group {
+    name                 = "privatelink-file-web-core-windows-net"
+    private_dns_zone_ids = [azurerm_private_dns_zone.private_web.id]
+  }
 }
 
 # Link the Private Zone with the VNet
@@ -115,13 +102,15 @@ resource "azurerm_private_dns_zone_virtual_network_link" "sa_private_web" {
   virtual_network_id    = azurerm_virtual_network.vnet.id
 }
 
+# Public IP for the jumpbox
 resource "azurerm_public_ip" "pip" {
-    name                         = "jumpbox-ip"
-    location                     = azurerm_resource_group.rg.location
-    resource_group_name          = azurerm_resource_group.rg.name
-    allocation_method            = "Dynamic"
+  name                = "jumpbox-ip"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  allocation_method   = "Static"
 }
 
+# NIC for the jumpbox
 resource "azurerm_network_interface" "nic" {
   name                = "jumpbox-nic"
   location            = azurerm_resource_group.rg.location
@@ -135,6 +124,7 @@ resource "azurerm_network_interface" "nic" {
   }
 }
 
+# Create the jumpbox VM
 resource "azurerm_linux_virtual_machine" "jumpbox" {
   name                = "jumpbox"
   resource_group_name = azurerm_resource_group.rg.name
@@ -152,7 +142,7 @@ resource "azurerm_linux_virtual_machine" "jumpbox" {
 
   admin_ssh_key {
     username   = "adminuser"
-    public_key = file("~/.ssh/id_rsa.pub")
+    public_key = file(pathexpand("~/.ssh/id_rsa.pub"))
   }
 
   source_image_reference {
