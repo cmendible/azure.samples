@@ -1,0 +1,14 @@
+crds:
+  enabled: true
+csi:
+  provisionerTolerations:
+    - effect: NoSchedule
+      key: storage-node
+      operator: Exists
+  pluginTolerations:
+    - effect: NoSchedule
+      key: storage-node
+      operator: Exists
+agent:
+  # AKS: https://rook.github.io/docs/rook/v1.7/flexvolume.html#azure-aks
+  flexVolumeDirPath: "/etc/kubernetes/volumeplugins"

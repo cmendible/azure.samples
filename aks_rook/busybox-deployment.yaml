@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: busy
+  name: busy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: busy
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: busy
+    spec:
+      containers:
+        - image: busybox
+          imagePullPolicy: Always
+          name: busy-rook
+          command:
+            - sh
+            - -c
+            - test -f /ceph-file-store/important.file || echo "yada yada yada" >> /ceph-file-store/important.file && sleep 3600
+          volumeMounts:
+            - mountPath: "/ceph-file-store"
+              name: ceph-volume
+          resources: {}
+      volumes:
+        - name: ceph-volume
+          persistentVolumeClaim:
+            claimName: ceph-filesystem-pvc
+            readOnly: false
