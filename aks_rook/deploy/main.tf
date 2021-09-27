@@ -67,4 +67,21 @@ resource "azurerm_kubernetes_cluster_node_pool" "npceph" {
   node_count            = 3
   node_taints           = ["storage-node=true:NoSchedule"]
   availability_zones    = ["1", "2", "3"]
+  vnet_subnet_id        = azurerm_subnet.aks.id
+}
+
+data "azurerm_resource_group" "node_resource_group" {
+  name = azurerm_kubernetes_cluster.aks.node_resource_group
+}
+
+resource "azurerm_role_assignment" "kubelet_contributor" {
+  scope                = data.azurerm_resource_group.node_resource_group.id
+  role_definition_name = "Contributor" #"Virtual Machine Contributor"?
+  principal_id         = azurerm_kubernetes_cluster.aks.kubelet_identity[0].object_id
+}
+
+resource "azurerm_role_assignment" "kubelet_network_contributor" {
+  scope                = azurerm_virtual_network.vnet.id
+  role_definition_name = "Network Contributor"
+  principal_id         = azurerm_kubernetes_cluster.aks.identity[0].principal_id
 }
