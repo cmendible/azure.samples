@@ -176,3 +176,10 @@ helm install --create-namespace --namespace rook-ceph rook-ceph rook-release/roo
 ``` shell
 helm install --create-namespace --namespace rook-ceph rook-ceph-cluster --version 1.7.3 rook-release/rook-ceph-cluster -f ./deploy/rook-ceph-cluster-values.yaml
 ``` 
+
+__References:__
+
+* [Using Rook / Ceph with PVCs on Azure Kubernetes Service](https://partlycloudy.blog/2019/12/08/using-rook-ceph-with-pvcs-on-azure-kubernetes-service/)
+* [Ceph Operator Helm Chart](https://github.com/rook/rook/blob/master/Documentation/helm-operator.md)
+* [Ceph FlexVolume Configuration for AKS](https://rook.github.io/docs/rook/v1.7/flexvolume.html#azure-aks)
+* [Ceph Storage Shared Filesystem](https://rook.github.io/docs/rook/v1.7/ceph-filesystem.html)
