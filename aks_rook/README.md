@@ -152,7 +152,9 @@ kubectl get po -l app=rook-ceph-osd -n rook-ceph -o wide
 Simulate a VM crash:
 
 ``` shell
-$resourceGroup=$(az aks show --resource-group aks-rook --name aks-rook --query "nodeResourceGroup" --output tsv)
+$resourceGroupName="aks-rook"
+$aksName="aks-rook"
+$resourceGroup=$(az aks show --resource-group $resourceGroupName --name $aksName --query "nodeResourceGroup" --output tsv)
 $cephScaleSet=$(az vmss list --resource-group $resourceGroup --query "[].{name:name}[? contains(name,'npceph')] | [0].name" --output tsv)
 az vmss deallocate --resource-group $resourceGroup --name $cephScaleSet --instance-ids 0
 ```
