@@ -45,7 +45,7 @@ resource "azurerm_redis_cache" "redis" {
   capacity            = 2
   family              = "P"
   sku_name            = "Premium"
-  enable_non_ssl_port = false
+  enable_non_ssl_port = true
   minimum_tls_version = "1.2"
 
   redis_configuration {
@@ -88,6 +88,10 @@ resource "azurerm_monitor_diagnostic_setting" "monitor" {
   lifecycle {
     ignore_changes = [metric]
   }
+}
+
+output "redis_name" {
+  value = azurerm_redis_cache.redis.name
 }
 
 output "redis_host_name" {
