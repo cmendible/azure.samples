@@ -39,7 +39,7 @@ resource "azurerm_resource_group" "rg" {
 }
 
 resource "azurerm_mysql_flexible_server" "flexible_server" {
-  name                   = var.mysql_name
+  name                   = "${var.mysql_name}-${lower(random_id.random.hex)}"
   resource_group_name    = azurerm_resource_group.rg.name
   location               = azurerm_resource_group.rg.location
   administrator_login    = "psqladmin"
@@ -50,6 +50,7 @@ resource "azurerm_mysql_flexible_server" "flexible_server" {
     mode                      = "ZoneRedundant"
     standby_availability_zone = "2"
   }
+  zone = "1"
 }
 
 resource "azurerm_log_analytics_workspace" "logs" {
@@ -102,7 +103,7 @@ output "resource_group" {
 }
 
 output "mysql_name" {
-  value = var.mysql_name
+  value = azurerm_mysql_flexible_server.flexible_server.name
 }
 
 output "mysql_fqdn" {
