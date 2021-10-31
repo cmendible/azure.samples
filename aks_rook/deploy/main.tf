@@ -80,7 +80,7 @@ resource "azurerm_role_assignment" "kubelet_contributor" {
   principal_id         = azurerm_kubernetes_cluster.aks.kubelet_identity[0].object_id
 }
 
-resource "azurerm_role_assignment" "kubelet_network_contributor" {
+resource "azurerm_role_assignment" "identity_network_contributor" {
   scope                = azurerm_virtual_network.vnet.id
   role_definition_name = "Network Contributor"
   principal_id         = azurerm_kubernetes_cluster.aks.identity[0].principal_id
