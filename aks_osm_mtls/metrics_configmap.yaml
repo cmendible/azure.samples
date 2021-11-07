@@ -1,0 +1,14 @@
+kind: ConfigMap
+apiVersion: v1
+data:
+  schema-version: v1
+  config-version: ver1
+  osm-metric-collection-configuration: |-
+    # OSM metric collection settings
+    [osm_metric_collection_configuration]
+      [osm_metric_collection_configuration.settings]
+          # Namespaces to monitor
+          monitor_namespaces = ["default"]
+metadata:
+  name: container-azm-ms-osmconfig
+  namespace: kube-system
