@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: busy
+  name: busy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: busy
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: busy
+    spec:
+      containers:
+        - image: busybox
+          imagePullPolicy: Always
+          name: busy-rook
+          command:
+            - sh
+            - -c
+            - sleep 3600
+          volumeMounts:
+            - mountPath: "/openebs-store"
+              name: openebs-volume
+          resources: {}
+      volumes:
+        - name: openebs-volume
+          persistentVolumeClaim:
+            claimName: openebs-pvc
+            readOnly: false
