@@ -1,0 +1,31 @@
+apiVersion: specs.smi-spec.io/v1alpha4
+kind: HTTPRouteGroup
+metadata:
+  name: all-routes
+  namespace: default
+spec:
+  matches:
+  - name: everything
+    pathRegex: "/*"
+    methods: ["*"]
+
+---
+apiVersion: access.smi-spec.io/v1alpha3
+kind: TrafficTarget
+metadata:
+  name: nginx
+  namespace: default
+spec:
+  destination:
+    kind: ServiceAccount
+    name: nginx
+    namespace: default
+  rules:
+  - kind: HTTPRouteGroup
+    name: all-routes
+    matches:
+    - everything
+  sources:
+  - kind: ServiceAccount
+    name: busybox
+    namespace: default
