@@ -38,10 +38,10 @@ Connecting to nginx (10.0.149.72:80)
 wget: error getting response: Resource temporarily unavailable
 ```
 
-## Add trafic access control to the sample microservices
+## Add traffic access control to the sample microservices
 
 ```	shell
-kubectl apply -f nginx_trafiic_target.yaml
+kubectl apply -f nginx_traffic_target.yaml
 ```
 
 ## Recheck Connectivity
