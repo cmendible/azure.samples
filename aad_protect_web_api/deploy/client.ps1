@@ -26,6 +26,9 @@ $token = Get-MsalToken -TenantId $tenantId -ClientId $clientId -Interactive -Sco
 
 echo "Please Complete Azure AD Login"
 echo ""
+echo "ID Token:"
+echo $($token.IDToken)
+echo ""
 echo "Bearer Token:"
 echo $($token.AccessToken)
 echo ""
