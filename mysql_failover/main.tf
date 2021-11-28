@@ -2,7 +2,7 @@ terraform {
   required_version = "> 0.14"
   required_providers {
     azurerm = {
-      version = ">= 2.82.0"
+      version = ">= 2.87.0"
     }
     random = {
       version = "= 3.1.0"
@@ -38,6 +38,13 @@ resource "azurerm_resource_group" "rg" {
   location = var.location
 }
 
+data "http" "current_public_ip" {
+  url = "http://ipinfo.io/json"
+  request_headers = {
+    Accept = "application/json"
+  }
+}
+
 resource "azurerm_mysql_flexible_server" "flexible_server" {
   name                   = "${var.mysql_name}-${lower(random_id.random.hex)}"
   resource_group_name    = azurerm_resource_group.rg.name
@@ -51,6 +58,14 @@ resource "azurerm_mysql_flexible_server" "flexible_server" {
     standby_availability_zone = "2"
   }
   zone = "1"
+}
+
+resource "azurerm_mysql_flexible_server_firewall_rule" "ip" {
+  name                = "home"
+  resource_group_name = azurerm_resource_group.rg.name
+  server_name         = azurerm_mysql_flexible_server.flexible_server.name
+  start_ip_address    = jsondecode(data.http.current_public_ip.body).ip
+  end_ip_address      = jsondecode(data.http.current_public_ip.body).ip
 }
 
 resource "azurerm_log_analytics_workspace" "logs" {
