@@ -8,8 +8,6 @@ resource "azurerm_resource_group" "rg" {
   location = var.location
 }
 
-
-
 output "url" {
   value = "${azurerm_api_management.apim.gateway_url}/mock"
 }
