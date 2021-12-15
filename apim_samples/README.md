@@ -32,3 +32,9 @@ key=<Get Built-in all-access subscription key from portal>
 curl -k -i -H "Ocp-Apim-Subscription-Key: $key" https://localhost:8081/mock
 curl -k -i -H "Ocp-Apim-Subscription-Key: $key" https://localhost:8081/ip
 ```
+
+## Purge APIM
+
+``` shell
+az rest --method delete --header "Accept=application/json" -u 'https://management.azure.com/subscriptions/<subscription id>/providers/Microsoft.ApiManagement/locations/<location>/deletedservices/<apim name>?api-version=2020-06-01-preview'
+```
