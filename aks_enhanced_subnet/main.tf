@@ -4,37 +4,6 @@ resource "azurerm_resource_group" "rg" {
   location = var.location
 }
 
-# Create VNET for AKS
-resource "azurerm_virtual_network" "vnet" {
-  name                = "private-network"
-  address_space       = ["10.0.0.0/8", "192.1.0.0/16"]
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-}
-
-# Create the Subnet for AKS nodes.
-resource "azurerm_subnet" "aks_nodes" {
-  name                 = "aks_nodes"
-  resource_group_name  = azurerm_resource_group.rg.name
-  virtual_network_name = azurerm_virtual_network.vnet.name
-  address_prefixes     = ["10.240.0.0/16"]
-}
-
-resource "azurerm_subnet" "aks_pods" {
-  name                 = "aks_pods"
-  resource_group_name  = azurerm_resource_group.rg.name
-  virtual_network_name = azurerm_virtual_network.vnet.name
-  address_prefixes     = ["192.1.0.0/16"]
-
-  delegation {
-    name = "aks-delegation"
-    service_delegation {
-      actions = ["Microsoft.Network/virtualNetworks/subnets/join/action"]
-      name    = "Microsoft.ContainerService/managedClusters"
-    }
-  }
-}
-
 # Create the AKS cluster.
 # Cause this is a test node_count is set to 1 
 resource "azurerm_kubernetes_cluster" "aks" {
@@ -95,4 +64,40 @@ resource "azurerm_role_assignment" "kubelet_network_contributor" {
   scope                = azurerm_virtual_network.vnet.id
   role_definition_name = "Network Contributor"
   principal_id         = azurerm_kubernetes_cluster.aks.identity[0].principal_id
+}
+
+resource "azurerm_network_profile" "np" {
+  name                = "jumpnp"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+
+  container_network_interface {
+    name = "bindnic"
+
+    ip_configuration {
+      name      = "bindipconfig"
+      subnet_id = azurerm_subnet.jump.id
+    }
+  }
+}
+
+resource "azurerm_container_group" "containergroup" {
+  name                = "helloworld"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  ip_address_type     = "Private"
+  os_type             = "Linux"
+  network_profile_id  = azurerm_network_profile.np.id
+
+  container {
+    name   = "helloworld"
+    image  = "mcr.microsoft.com/azuredocs/aci-helloworld"
+    cpu    = "1"
+    memory = "1"
+
+    ports {
+      port     = 80
+      protocol = "TCP"
+    }
+  }
 }
