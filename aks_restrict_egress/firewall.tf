@@ -83,3 +83,25 @@ resource "azurerm_firewall_policy_rule_collection_group" "policies" {
     }
   }
 }
+
+resource "azurerm_firewall_policy_rule_collection_group" "aks_api_policies" {
+  name               = "aks-api"
+  firewall_policy_id = azurerm_firewall_policy.policy.id
+  priority           = 200
+
+  application_rule_collection {
+    name     = "aksfwar"
+    priority = 200
+    action   = "Allow"
+
+    rule {
+      name = "aks-api"
+      protocols {
+        type = "Https"
+        port = 443
+      }
+      source_addresses      = ["*"]
+      destination_fqdn_tags = [azurerm_kubernetes_cluster.aks.fqdn]
+    }
+  }
+}
