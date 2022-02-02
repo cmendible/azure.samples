@@ -270,3 +270,6 @@ __pycache__/
 
 # Environment
 env.conf
+
+# appsettings.json
+appsettings.json
