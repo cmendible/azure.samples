@@ -12,7 +12,7 @@ var scopes = new[] { "https://graph.microsoft.com/.default" };
 
 // Multi-tenant apps can use "common",
 // single-tenant apps must use the tenant ID from the Azure portal
-var tenantId = "<teant id>";
+var tenantId = "<tenant id>";
 
 // Values from app registration
 var clientId = "<client id>";
