@@ -11,29 +11,19 @@ using Microsoft.WindowsAzure.Storage.Blob;
 
 var config = new ConfigurationBuilder()
                     .SetBasePath(Directory.GetCurrentDirectory())
-                    .AddJsonFile("appsettings.json")
                     .AddEnvironmentVariables()
                     .Build();
 
-var cred = new BatchSharedKeyCredentials(config["batch.url"], config["batch.accountName"], config["batch.key"]);
-var storageCred = new StorageCredentials(config["storage.name"], config["storage.key"]);
+var cred = new BatchSharedKeyCredentials(config["batch_url"], config["batch_accountName"], config["batch_key"]);
+var storageCred = new StorageCredentials(config["storage_name"], config["storage_key"]);
 
 var storageAccount = new CloudStorageAccount(storageCred, true);
 var batchClient = BatchClient.Open(cred);
-var poolId = "cfm";
 var jobId = "myJob";
 var taskId = "myTask";
 var containerName = taskId.ToLower();
 
-CloudJob job = null;
-try
-{
-    job = await batchClient.JobOperations.GetJobAsync(jobId);
-}
-catch
-{
-    job = batchClient.JobOperations.CreateJob(jobId, new PoolInformation { PoolId = poolId });
-}
+var job = await batchClient.JobOperations.GetJobAsync(jobId);
 
 var container = storageAccount.CreateCloudBlobClient().GetContainerReference(containerName);
 
@@ -45,13 +35,6 @@ var containerSas = container.GetSharedAccessSignature(new SharedAccessBlobPolicy
     SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddDays(1)
 });
 var containerUrl = container.Uri.AbsoluteUri + containerSas;
-
-// Commit the job to the Batch service
-await job.CommitAsync();
-Console.WriteLine($"Created job {jobId}");
-
-// Obtain the bound job from the Batch service
-await job.RefreshAsync();
 
 // Create a series of simple tasks which dump the task environment to a file and then write random values to a text file
 var tasksToAdd = new CloudTask[]
