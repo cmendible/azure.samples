@@ -12,7 +12,7 @@ resource "azurerm_key_vault" "kv" {
 
   access_policy {
     tenant_id = data.azurerm_client_config.current.tenant_id
-    object_id = "9bbdc603-63eb-4bd5-9bcc-51bccf3ede37" # Microsoft Azure Batch
+    object_id = var.azure_batch_object_id
 
     # https://docs.microsoft.com/en-us/azure/batch/batch-account-create-portal#create-a-key-vault
     secret_permissions = [

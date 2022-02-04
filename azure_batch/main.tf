@@ -10,7 +10,7 @@ resource "azurerm_resource_group" "rg" {
 resource "azurerm_role_assignment" "microsoft_azure_batch" {
   scope                = data.azurerm_subscription.current.id
   role_definition_name = "Contributor"
-  principal_id         = "9bbdc603-63eb-4bd5-9bcc-51bccf3ede37" # Microsoft Azure Batch
+  principal_id         = var.azure_batch_object_id
 }
 
 resource "azuread_application" "sp" {
