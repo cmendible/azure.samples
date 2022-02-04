@@ -29,7 +29,7 @@ resource "azurerm_windows_function_app" "func_app" {
   service_plan_id             = azurerm_app_service_plan.plan.id
   storage_account_name        = azurerm_storage_account.sa.name
   storage_account_access_key  = azurerm_storage_account.sa.primary_access_key
-  functions_extension_version = "~4"
+  functions_extension_version = "~3"
 
   site_config {}
 
