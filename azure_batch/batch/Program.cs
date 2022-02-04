@@ -8,17 +8,29 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Auth;
 using Microsoft.WindowsAzure.Storage.Blob;
+using Microsoft.IdentityModel.Clients.ActiveDirectory;
 
 var config = new ConfigurationBuilder()
-                    .SetBasePath(Directory.GetCurrentDirectory())
                     .AddEnvironmentVariables()
                     .Build();
 
-var cred = new BatchSharedKeyCredentials(config["batch_url"], config["batch_accountName"], config["batch_key"]);
-var storageCred = new StorageCredentials(config["storage_name"], config["storage_key"]);
+var authorityUri = $"https://login.microsoftonline.com/{config["tenant_id"]}";
+var clientId = config["client_id"];
+var clientSecret = config["client_secret"];
+
+var authContext = new AuthenticationContext(authorityUri);
+var clientCredential = new ClientCredential(clientId, clientSecret);
+var authResult = await authContext.AcquireTokenAsync("https://batch.core.windows.net", clientCredential);
+
+var batchUrl = config["batch_url"];
+var storageName = config["storage_name"];
+var storageKey = config["storage_key"];
+var cred = new BatchTokenCredentials(batchUrl, authResult.AccessToken);
+var storageCred = new StorageCredentials(storageName, storageKey);
 
 var storageAccount = new CloudStorageAccount(storageCred, true);
 var batchClient = BatchClient.Open(cred);
+
 var jobId = "myJob";
 var taskId = "myTask";
 var containerName = taskId.ToLower();

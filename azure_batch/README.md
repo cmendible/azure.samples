@@ -17,5 +17,5 @@ terraform apply --auto-approve
 
 
 ``` powershell
-az batch pool supported-images list --account-endpoint <account-endpoint> --account-name <account-name> --query "[?imageReference.publisher == 'oracle']"
+az batch pool supported-images list --account-endpoint $(terraform output -raw batch_url) --account-name $(terraform output -raw batch_accountName)  --query "[?imageReference.publisher == 'oracle']"
 ```
