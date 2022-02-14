@@ -1,3 +1,7 @@
+## Bicep sample
+
+* https://github.com/Azure/azure-quickstart-templates/tree/master/quickstarts/microsoft.web/function-app-storage-private-endpoints
+
 ## azurerm_function_app is affected by terrafrom provider issues: 
 
 * https://github.com/hashicorp/terraform-provider-azurerm/issues/10990
