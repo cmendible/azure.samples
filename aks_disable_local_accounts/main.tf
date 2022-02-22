@@ -71,7 +71,4 @@ resource "kubernetes_namespace" "ns" {
   metadata {
     name = "nolocalaccounts"
   }
-  depends_on = [
-    null_resource.kubelogin
-  ]
 }

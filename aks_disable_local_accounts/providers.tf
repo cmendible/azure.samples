@@ -17,32 +17,35 @@ provider "azurerm" {
   features {}
 }
 
+
+data "azuread_service_principal" "aks_aad_server" {
+  display_name = "Azure Kubernetes Service AAD Server"
+}
+
 # Configuring the kubernetes provider
 provider "kubernetes" {
   host                   = azurerm_kubernetes_cluster.aks.kube_config.0.host
-  config_path    = "~/.kube/config"
-}
+  cluster_ca_certificate = base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.cluster_ca_certificate)
 
-resource "null_resource" "sp_login" {
-  provisioner "local-exec" {
-    command = "az login --service-principal -u ${azuread_application.sp.application_id} -p ${random_password.passwd.result} --tenant ${data.azurerm_subscription.current.tenant_id} --allow-no-subscriptions"
+  # Using kubelogin to get an AAD token for the cluster.
+  # server-id is a fixed value per tenant?
+  exec {
+    api_version = "client.authentication.k8s.io/v1beta1"
+    command = "kubelogin"
+    args = [
+      "get-token",
+      "--environment",
+      "AzurePublicCloud",
+      "--server-id",
+      data.azuread_service_principal.aks_aad_server.application_id,
+      "--client-id",
+      azuread_application.sp.application_id,
+      "--client-secret",
+      random_password.passwd.result,
+      "-t",
+      data.azurerm_subscription.current.tenant_id,
+      "-l",
+      "spn"
+    ]
   }
-}
-
-resource "null_resource" "kubeconfig" {
-  provisioner "local-exec" {
-    command = "az aks get-credentials -n ${azurerm_kubernetes_cluster.aks.name} -g ${var.resource_group} --overwrite-existing"
-  }
-  depends_on = [
-    null_resource.sp_login
-  ]
-}
-
-resource "null_resource" "kubelogin" {
-  provisioner "local-exec" {
-    command = "kubelogin convert-kubeconfig -l spn --client-id ${azuread_application.sp.application_id} --client-secret '${random_password.passwd.result}'"
-  }
-  depends_on = [
-    null_resource.sp_login
-  ]
 }
