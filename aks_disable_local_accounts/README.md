@@ -1,4 +1,4 @@
-Requieres [kubelogin](https://github.com/Azure/kubelogin)
+Requires [kubelogin](https://github.com/Azure/kubelogin)
 
 ``` powershell
 Invoke-WebRequest https://github.com/Azure/kubelogin/releases/download/v0.0.11/kubelogin-win-amd64.zip  -OutFile kubelogin.zip
