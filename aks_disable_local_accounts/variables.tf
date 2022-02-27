@@ -13,6 +13,7 @@ variable "aks_name" {
   default = "aksnolocalaccounts"
 }
 
+# Name of the Service Princiapl we'll use to connect to the cluster.
 variable "sp_name" {
   default = "aksnolocalaccounts"
 }

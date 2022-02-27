@@ -10,6 +10,7 @@ data "azurerm_subscription" "current" {}
 # Get current Client
 data "azuread_client_config" "current" {}
 
+# We'll need the Application Id of the Azure Kubernetes Service AAD Server.
 data "azuread_service_principal" "aks_aad_server" {
   display_name = "Azure Kubernetes Service AAD Server"
 }
