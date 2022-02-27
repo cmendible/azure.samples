@@ -17,11 +17,6 @@ provider "azurerm" {
   features {}
 }
 
-
-data "azuread_service_principal" "aks_aad_server" {
-  display_name = "Azure Kubernetes Service AAD Server"
-}
-
 # Configuring the kubernetes provider
 provider "kubernetes" {
   host                   = azurerm_kubernetes_cluster.aks.kube_config.0.host

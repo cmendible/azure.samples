@@ -10,6 +10,10 @@ data "azurerm_subscription" "current" {}
 # Get current Client
 data "azuread_client_config" "current" {}
 
+data "azuread_service_principal" "aks_aad_server" {
+  display_name = "Azure Kubernetes Service AAD Server"
+}
+
 # Create VNET for AKS
 resource "azurerm_virtual_network" "vnet" {
   name                = "private-network"
