@@ -10,7 +10,7 @@ resource "helm_release" "kubecost" {
   name       = "kubecost"
   chart      = "cost-analyzer"
   namespace  = "kubecost"
-  version    = "1.79.1"
+  version    = "1.91.2"
   repository = "https://kubecost.github.io/cost-analyzer/"
 
   # Set the cluster name
@@ -40,7 +40,7 @@ resource "helm_release" "kubecost" {
   # Azure Subscription ID
   set {
     name  = "kubecostProductConfigs.azureSubscriptionID"
-    value = data.azurerm_subscription.current.id
+    value = data.azurerm_subscription.current.subscription_id
   }
 
   # Azure Client ID

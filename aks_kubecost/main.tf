@@ -61,7 +61,6 @@ resource "azurerm_kubernetes_cluster" "aks" {
 # Create Application registration for kubecost
 resource "azuread_application" "kubecost" {
   display_name               = var.kubecost_sp_name
-  identifier_uris            = ["http://${var.kubecost_sp_name}"]
 }
 
 # Create Service principal for kubecost
