@@ -21,12 +21,12 @@ resource evh 'Microsoft.EventHub/namespaces/eventhubs@2021-11-01' = {
   }
 }
 
-resource consumer_group 'Microsoft.EventHub/namespaces/eventhubs/consumergroups@2021-11-01' = {
+resource evh_consumer_group 'Microsoft.EventHub/namespaces/eventhubs/consumergroups@2021-11-01' = {
   name: 'analyze-tweet'
   parent: evh
 }
 
-resource auth_evh 'Microsoft.EventHub/namespaces/eventhubs/authorizationRules@2021-11-01' = {
+resource evh_auth 'Microsoft.EventHub/namespaces/eventhubs/authorizationRules@2021-11-01' = {
   name: 'DaprListenSend'
   parent: evh
   properties: {
@@ -37,4 +37,4 @@ resource auth_evh 'Microsoft.EventHub/namespaces/eventhubs/authorizationRules@20
   }
 }
 
-output connectionString string = auth_evh.listKeys().primaryConnectionString
+output connectionString string = evh_auth.listKeys().primaryConnectionString
