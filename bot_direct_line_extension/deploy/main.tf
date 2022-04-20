@@ -33,36 +33,6 @@ resource "azurerm_application_insights" "ai" {
 
 data "azurerm_client_config" "current" {}
 
-module "bot" {
-  source              = "./modules/bot"
-  resource_group_name = azurerm_resource_group.rg.name
-  deployment_name     = local.name
-  bot_name            = local.name
-  bot_endpoint        = "https://${local.name}.azurewebsites.net/api/messages"
-  msaAppTenantId      = data.azurerm_client_config.current.tenant_id
-  msaAppMSIResourceId = azurerm_user_assigned_identity.id.id
-  msaAppId            = azurerm_user_assigned_identity.id.client_id
-}
-
-resource "azurerm_bot_channel_directline" "directline" {
-  bot_name            = local.name
-  location            = "global"
-  resource_group_name = azurerm_resource_group.rg.name
-
-  site {
-    name                            = "Default Site"
-    enabled                         = true
-    v1_allowed                      = true
-    v3_allowed                      = true
-    enhanced_authentication_enabled = false
-    trusted_origins                 = []
-  }
-
-  depends_on = [
-    module.bot
-  ]
-}
-
 resource "azurerm_service_plan" "plan" {
   name                = "bot-plan"
   location            = azurerm_resource_group.rg.location
@@ -108,4 +78,48 @@ resource "azurerm_windows_web_app" "bot" {
     MicrosoftAppPassword                  = ""
     MicrosoftAppTenantId                  = data.azurerm_client_config.current.tenant_id
   }
+}
+
+resource "azapi_resource" "bot" {
+  name      = local.name
+  parent_id = azurerm_resource_group.rg.id
+  type      = "Microsoft.BotService/botServices@2021-05-01-preview"
+  location  = "global"
+  body = jsonencode({
+    kind = "azurebot"
+    sku = {
+      name = "S1"
+    }
+    properties = {
+      displayName                 = local.name
+      iconUrl                     = "https://docs.botframework.com/static/devportal/client/images/bot-framework-default.png"
+      endpoint                    = "https://${local.name}.azurewebsites.net/api/messages"
+      msaAppId                    = azurerm_user_assigned_identity.id.client_id
+      msaAppTenantId              = data.azurerm_client_config.current.tenant_id
+      msaAppMSIResourceId         = azurerm_user_assigned_identity.id.id
+      msaAppType                  = "UserAssignedMSI"
+      luisAppIds                  = []
+      schemaTransformationVersion = "1.3"
+      isCmekEnabled               = false
+    }
+  })
+}
+
+resource "azurerm_bot_channel_directline" "directline" {
+  bot_name            = local.name
+  location            = "global"
+  resource_group_name = azurerm_resource_group.rg.name
+
+  site {
+    name                            = "Default Site"
+    enabled                         = true
+    v1_allowed                      = true
+    v3_allowed                      = true
+    enhanced_authentication_enabled = false
+    trusted_origins                 = []
+  }
+
+  depends_on = [
+    azapi_resource.bot
+  ]
 }
