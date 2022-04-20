@@ -1,0 +1,66 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "bot_name": {
+            "type": "string",
+            "metadata": {
+                "description,": "Name for the bot"
+            }
+        },
+        "bot_endpoint": {
+            "type": "string",
+            "metadata": {
+                "description": "Bot Endpoint"
+            }
+        },
+        "msaAppTenantId": {
+            "type": "string",
+            "metadata": {
+                "description": "Tenant Id"
+            }
+        },
+        "msaAppMSIResourceId": {
+            "type": "string",
+            "metadata": {
+                "description": "MSI Resource Id"
+            },
+            "defaultValue": "1.0"
+        },
+        "msaAppId": {
+            "type": "string",
+            "metadata": {
+                "description": "MSI Client Id"
+            },
+            "defaultValue": "1.0"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "apiVersion": "2021-03-01",
+            "type": "Microsoft.BotService/botServices",
+            "name": "[parameters('bot_name')]",
+            "location": "global",
+            "kind": "azurebot",
+            "sku": {
+                "name": "S1"
+            },
+            "properties": {
+                "name": "[parameters('bot_name')]",
+                "displayName": "[parameters('bot_name')]",
+                "iconUrl": "https://docs.botframework.com/static/devportal/client/images/bot-framework-default.png",
+                "endpoint": "[parameters('bot_endpoint')]",
+                "msaAppId": "[parameters('msaAppId')]",
+                "msaAppTenantId": "[parameters('msaAppTenantId')]",
+                "msaAppMSIResourceId": "[parameters('msaAppMSIResourceId')]",
+                "msaAppType": "UserAssignedMSI",
+                "luisAppIds": [],
+                "schemaTransformationVersion": "1.3",
+                "isCmekEnabled": false,
+                "isIsolated": false
+            }
+        }
+    ],
+    "outputs": {}
+}
