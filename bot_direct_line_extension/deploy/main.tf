@@ -25,11 +25,20 @@ resource "azurerm_application_insights" "ai" {
   application_type    = "web"
 }
 
-# resource "azurerm_application_insights_api_key" "key" {
-#   name                    = local.name
-#   application_insights_id = azurerm_application_insights.ai.id
-#   read_permissions        = ["aggregate", "api", "draft", "extendqueries", "search"]
-# }
+resource "azurerm_application_insights_api_key" "key" {
+  name                    = local.name
+  application_insights_id = azurerm_application_insights.ai.id
+  read_permissions        = ["aggregate", "api", "draft", "extendqueries", "search"]
+}
+
+resource "azurerm_log_analytics_workspace" "la" {
+  name                = local.name
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  sku                 = "PerGB2018"
+  retention_in_days   = 30
+  tags                = {}
+}
 
 data "azurerm_client_config" "current" {}
 
@@ -91,16 +100,19 @@ resource "azapi_resource" "bot" {
       name = "S1"
     }
     properties = {
-      displayName                 = local.name
-      iconUrl                     = "https://docs.botframework.com/static/devportal/client/images/bot-framework-default.png"
-      endpoint                    = "https://${local.name}.azurewebsites.net/api/messages"
-      msaAppId                    = azurerm_user_assigned_identity.id.client_id
-      msaAppTenantId              = data.azurerm_client_config.current.tenant_id
-      msaAppMSIResourceId         = azurerm_user_assigned_identity.id.id
-      msaAppType                  = "UserAssignedMSI"
-      luisAppIds                  = []
-      schemaTransformationVersion = "1.3"
-      isCmekEnabled               = false
+      displayName                       = local.name
+      iconUrl                           = "https://docs.botframework.com/static/devportal/client/images/bot-framework-default.png"
+      endpoint                          = "https://${local.name}.azurewebsites.net/api/messages"
+      msaAppId                          = azurerm_user_assigned_identity.id.client_id
+      msaAppTenantId                    = data.azurerm_client_config.current.tenant_id
+      msaAppMSIResourceId               = azurerm_user_assigned_identity.id.id
+      msaAppType                        = "UserAssignedMSI"
+      luisAppIds                        = []
+      schemaTransformationVersion       = "1.3"
+      isCmekEnabled                     = false
+      developerAppInsightKey            = azurerm_application_insights.ai.instrumentation_key
+      developerAppInsightsApiKey        = azurerm_application_insights_api_key.key.api_key
+      developerAppInsightsApplicationId = azurerm_application_insights.ai.app_id
     }
   })
 }
@@ -122,4 +134,27 @@ resource "azurerm_bot_channel_directline" "directline" {
   depends_on = [
     azapi_resource.bot
   ]
+}
+
+resource "azurerm_monitor_diagnostic_setting" "bot_diagnostics" {
+  name                       = local.name
+  target_resource_id         = azapi_resource.bot.id
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.la.id
+
+  log {
+    category = "BotRequest"
+    enabled  = true
+    retention_policy {
+      days    = 0
+      enabled = false
+    }
+  }
+
+  metric {
+    category = "AllMetrics"
+    retention_policy {
+      days    = 0
+      enabled = false
+    }
+  }
 }

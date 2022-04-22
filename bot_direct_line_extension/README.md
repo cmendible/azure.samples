@@ -19,6 +19,20 @@ az webapp deployment source config-zip -g $resourceGroup -n $webappName -p "bot.
 curl -X POST -H "Authorization: Bearer <DIRECTLINE_CHANNEL_SECRET>" https://<WEB_SITE_NAME>.azurewebsites.net/.bot/v3/directline/tokens/generate
 ```
 
+## Log Queries
+
+``` powershell
+customEvents 
+| where customDimensions.StatusCode <> 200
+```
+
+``` powershell
+ABSBotRequests
+| where Channel == "directline"
+| summarize Number_Of_Requests = count() by tostring(ResultCode), bin(TimeGenerated, 5m)
+| render timechart
+```
+
 ## Generate dotnet project
 
 ``` powershell
