@@ -1,0 +1,27 @@
+trigger:
+  branches:
+    include:
+    - master
+  paths:
+    include:
+    - deploy
+
+variables:
+  vmImage: 'ubuntu-latest'
+
+stages:
+- stage: Build
+  jobs:
+  - job: TerraformBuild
+    displayName: 'Terraform Build'
+    pool: 
+      vmImage: $(vmImage)
+    steps:
+    - task: CopyFiles@2
+      displayName: 'Copy Terraform files to artifacts'
+      inputs:
+        SourceFolder: deploy
+        TargetFolder: '$(build.artifactstagingdirectory)/deploy'
+    
+    - upload: '$(build.artifactstagingdirectory)'
+      artifact: 'tfdrop'

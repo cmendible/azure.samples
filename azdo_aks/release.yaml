@@ -1,0 +1,57 @@
+parameters:
+  azureServiceConnection: default
+  containerRegistry: default
+  kubernetesCluster: default
+  azureResourceGroup: default
+
+stages:
+- stage: DeployWebApp
+  jobs:
+  - deployment: DeployWebApp
+    displayName: 'Deploy Simple Web App to k8s'
+    environment: dev
+    pool: 
+      vmImage: 'ubuntu-latest'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: DownloadPipelineArtifact@2
+            inputs:
+              buildType: 'current'
+              artifactName: 'drop'
+              path: $(Build.SourcesDirectory)
+          
+          - task: qetza.replacetokens.replacetokens-task.replacetokens@5
+            displayName: 'Replace tokens in kubernetes file'
+            inputs:
+              targetFiles: '**/*.yaml'
+              tokenPattern: rm
+              escapeType: none
+
+          - task: Kubernetes@1
+            displayName: 'Create Deployments & Services in AKS'
+            inputs:
+              connectionType: 'Azure Resource Manager'
+              azureSubscriptionEndpoint: $(azureServiceConnection)
+              azureResourceGroup: $(azureResourceGroup)
+              kubernetesCluster: $(kubernetesCluster)
+              command: apply
+              useConfigurationFile: true
+              configuration: '$(Build.SourcesDirectory)/kubernetes/simple-web-app-deployment.yaml'
+              versionSpec: 1.8.1
+              checkLatest: true
+          
+          - task: Kubernetes@1
+            displayName: 'Update image in AKS'
+            inputs:
+              connectionType: 'Azure Resource Manager'
+              azureSubscriptionEndpoint: $(azureServiceConnection)
+              azureResourceGroup: $(azureResourceGroup)
+              kubernetesCluster: $(kubernetesCluster)
+              command: set
+              arguments: 'image deployments/simple-web-app simple-web-app=$(containerRegistry)/web/simple-web-app:$(Build.BuildId)'
+              versionSpec: 1.8.1
+              checkLatest: true
+
+

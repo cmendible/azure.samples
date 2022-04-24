@@ -1,0 +1,87 @@
+# Explicitly set none for repositry trigger
+trigger:
+- none
+
+resources:
+  pipelines:
+  - pipeline: terraform  # Name of the pipeline resource
+    source: terraform-build-pipeline # Name of the triggering pipeline
+    trigger: 
+      branches:
+      - master
+
+variables:
+  vmImage: 'ubuntu-latest'
+  azureServiceConnection: 'azdoaks'
+  terraformStorageResourceGroup: 'azdo_aks_terraform'
+  terraformStorageAccount: 'tfstoragead080e0c'
+  terraformWorkingDirectory: '$(agent.builddirectory)/terraform/tfdrop/deploy/'
+
+jobs:
+- deployment: Deploy
+  displayName: Deploy
+  environment: dev-infra
+  pool: 
+    vmImage: $(vmImage)
+  strategy:
+    runOnce:
+      deploy:
+        steps:          
+        - download: terraform
+          artifact: tfdrop
+          patterns: '**/*.tf'
+
+        - task: AzureCLI@1
+          displayName: 'Azure CLI to deploy required Azure resources'
+          inputs:
+            azureSubscription: $(azureServiceConnection)
+            scriptLocation: inlineScript
+            inlineScript: |
+              # this will create Azure resource group
+              az group create --location westus --name $(terraformStorageResourceGroup)
+              az storage account create --name $(terraformStorageAccount) --resource-group $(terraformStorageResourceGroup) --location westeurope --sku Standard_LRS
+              az storage container create --name terraform --account-name $(terraformStorageAccount)
+              az storage account keys list -g $(terraformStorageResourceGroup) -n $(terraformStorageAccount)
+
+        - task: qetza.replacetokens.replacetokens-task.replacetokens@5
+          displayName: 'Replace tokens in terraform file'
+          inputs:
+            targetFiles: '**/*.tf'
+            tokenPattern: rm
+            escapeType: none
+        
+        - task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@0
+          displayName: 'Install Terraform'
+          inputs:
+            terraformVersion: 1.1.9
+
+        - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV2@2
+          displayName: 'Terraform : init'
+          inputs:
+            workingDirectory: '$(terraformWorkingDirectory)'
+            backendServiceArm: $(azureServiceConnection)
+            backendAzureRmResourceGroupName: '$(terraformStorageResourceGroup)'
+            backendAzureRmStorageAccountName: '$(terraformStorageAccount) '
+            backendAzureRmContainerName: terraform
+            backendAzureRmKey: terraform.tfstate        
+        
+        - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV2@2
+          displayName: 'Terraform : plan'
+          inputs:
+            command: plan
+            workingDirectory: '$(terraformWorkingDirectory)'
+            environmentServiceNameAzureRM: $(azureServiceConnection)
+            backendAzureRmResourceGroupName: '$(terraformStorageResourceGroup)'
+            backendAzureRmStorageAccountName: '$(terraformStorageAccount) '
+            backendAzureRmContainerName: terraform
+
+        - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV2@2
+          displayName: 'Terraform : apply -auto-approve'
+          inputs:
+            command: apply
+            workingDirectory: '$(terraformWorkingDirectory)'
+            commandOptions: '-auto-approve'
+            environmentServiceNameAzureRM: $(azureServiceConnection)
+            backendAzureRmResourceGroupName: '$(terraformStorageResourceGroup)'
+            backendAzureRmStorageAccountName: '$(terraformStorageAccount) '
+            backendAzureRmContainerName: terraform

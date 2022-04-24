@@ -1,0 +1,32 @@
+trigger:
+  branches:
+    include:
+    - master
+  paths:
+    exclude:
+    - terraform
+    - infra-build.yaml
+    - infra-release.yaml
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  azureServiceConnection: 'azdoaks'
+  terraformStorageResourceGroup: 'azdo_aks_terraform'
+  terraformStorageAccount: 'tfstoragead080e0c'
+  dockerRegistryServiceConnection: 'azdoacr'
+  containerRegistry: 'demok8s.azurecr.io'
+  azureResourceGroup: 'azdo_demo'
+  kubernetesCluster: 'demo-aks'
+
+stages:
+- template: build.yaml
+  parameters:
+    dockerRegistryServiceConnection: $(dockerRegistryServiceConnection)
+- template: release.yaml
+  parameters:
+    azureServiceConnection: $(azureServiceConnection)
+    containerRegistry: $(containerRegistry)
+    azureResourceGroup: $(azureResourceGroup)
+    kubernetesCluster: $(kubernetesCluster)

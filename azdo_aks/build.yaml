@@ -1,0 +1,105 @@
+parameters:
+  dockerRegistryServiceConnection: default
+
+stages:
+- stage: Build_and_Test
+  jobs:
+  - job: Build_and_Test
+      
+    pool:
+      vmImage: 'ubuntu-latest'
+
+    variables:
+      BuildConfiguration: 'Release'
+      buildPlatform: 'Any Cpu'
+        
+    steps:
+    - task: SonarQubePrepare@4
+      inputs:
+        SonarQube: 'SonarQube'
+        scannerMode: 'CLI'
+        configMode: 'file'
+        configFile: 'sonar-project-properties'
+        extraProperties: |
+          sonar.projectKey=SimpleWebApp
+          sonar.cs.vscoveragexml.reportsPaths=**/*.coveragexml
+
+    - task: DotNetCoreCLI@2
+      displayName: Restore  
+      inputs:
+        command: 'restore'
+        projects: '**/*.csproj'
+
+    - task: DotNetCoreCLI@2
+      displayName: Build
+      inputs:
+        command: 'build'
+        projects: '**/*.csproj'
+        arguments: '--configuration $(BuildConfiguration)'
+
+    - task: DotNetCoreCLI@2
+      displayName: Test
+      inputs:
+        command: test
+        projects: '**/*[Tt]ests/*.csproj'
+        arguments: '--configuration $(BuildConfiguration)'
+
+    - task: PowerShell@2
+      displayName: Convert coverage file
+      inputs:
+        targetType: 'inline'
+        script: |
+          Get-ChildItem -Recurse -Filter "*.coverage" | % {
+          $outfile = "$([System.IO.Path]::GetFileNameWithoutExtension($_.FullName)).coveragexml"
+          $output = [System.IO.Path]::Combine([System.IO.Path]::GetDirectoryName($_.FullName), $outfile)
+          . "C:\Program Files (x86)\Microsoft Visual Studio\2022\Enterprise\Team Tools\Dynamic Code Coverage Tools\CodeCoverage.exe" analyze /output:$output $_.FullName
+          }
+          "Done"
+
+    - task: SonarQubeAnalyze@4
+
+    - task: SonarQubePublish@4
+      inputs:
+        pollingTimeoutSec: '300'
+
+    - task: DotNetCoreCLI@2
+      displayName: Publish
+      inputs:
+        command: 'publish'
+        publishWebProjects: true
+        arguments: '--configuration $(BuildConfiguration) --output $(build.artifactstagingdirectory)'
+        
+    - task: CopyFiles@2
+      displayName: 'Copy Terraform files to artifacts'
+      inputs:
+        SourceFolder: deploy
+        TargetFolder: '$(build.artifactstagingdirectory)/deploy'
+
+    - task: CopyFiles@2
+      displayName: 'Copy Kubernetes manifest files to artifacts'
+      inputs:
+        SourceFolder: kubernetes
+        TargetFolder: '$(build.artifactstagingdirectory)/kubernetes'
+
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifact'
+      inputs:
+        PathtoPublish: '$(build.artifactstagingdirectory)'
+        ArtifactName: 'drop'
+
+    - task: Docker@2
+      displayName: Login to ACR
+      inputs:
+        command: login
+        containerRegistry: $(dockerRegistryServiceConnection)
+
+    - task: Docker@2
+      displayName: Build and Push
+      inputs:
+        command: buildAndPush
+        Dockerfile: ./src/SimpleWebApp/Dockerfile
+        buildContext: ./src/SimpleWebApp/
+        repository: web/simple-web-app
+        tags: |
+          latest
+          $(Build.BuildId)
