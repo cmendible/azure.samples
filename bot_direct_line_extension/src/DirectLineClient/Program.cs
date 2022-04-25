@@ -17,6 +17,15 @@ async Task StartBotConversation()
 
     DirectLineClient client = new DirectLineClient(directLineSecret)!;
 
+    // Force 429
+    // var numbers = Enumerable.Range(0, 10000).ToList();
+
+    // Parallel.ForEach(numbers, number =>
+    //     {
+    //         var a = client.Conversations.StartConversationAsync();
+    //         Console.WriteLine(number);
+    //     });
+
     var conversation = await client.Conversations.StartConversationAsync();
 
     Console.WriteLine(conversation.ConversationId);
