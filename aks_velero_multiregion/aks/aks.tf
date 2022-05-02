@@ -35,7 +35,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
     os_disk_size_gb = 30
     os_disk_type    = "Ephemeral"
     vnet_subnet_id  = azurerm_subnet.aks.id
-    availability_zones = [
+    zones = [
       "1",
       "2",
       "3"
