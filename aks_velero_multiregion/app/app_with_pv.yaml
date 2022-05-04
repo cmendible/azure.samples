@@ -24,13 +24,11 @@ metadata:
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: nginx-logs
+  name: data
   namespace: nginx-example
   labels:
     app: nginx
 spec:
-  # Optional:
-  # storageClassName: <YOUR_STORAGE_CLASS_NAME>
   accessModes:
     - ReadWriteOnce
   resources:
@@ -52,38 +50,20 @@ spec:
     metadata:
       labels:
         app: nginx
-      annotations:
-        pre.hook.backup.velero.io/container: fsfreeze
-        pre.hook.backup.velero.io/command: '["/sbin/fsfreeze", "--freeze", "/var/log/nginx"]'
-        post.hook.backup.velero.io/container: fsfreeze
-        post.hook.backup.velero.io/command: '["/sbin/fsfreeze", "--unfreeze", "/var/log/nginx"]'
     spec:
       volumes:
-        - name: nginx-logs
+        - name: data
           persistentVolumeClaim:
-           claimName: nginx-logs
+           claimName: data
       containers:
       - image: nginx:1.17.6
         name: nginx
         ports:
         - containerPort: 80
         volumeMounts:
-          - mountPath: "/var/log/nginx"
-            name: nginx-logs
+          - mountPath: "/var/data"
+            name: data
             readOnly: false
-      - image: ubuntu:bionic
-        name: fsfreeze
-        securityContext:
-          privileged: true
-        volumeMounts:
-          - mountPath: "/var/log/nginx"
-            name: nginx-logs
-            readOnly: false
-        command:
-          - "/bin/bash"
-          - "-c"
-          - "sleep infinity"
-
   
 ---
 apiVersion: v1

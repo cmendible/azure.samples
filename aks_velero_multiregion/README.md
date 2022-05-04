@@ -15,7 +15,7 @@ choco install velero
 
 ``` shell
 kubectl apply -f ./app/app_with_pv.yaml
-velero backup create nginx-backup --include-namespaces nginx-example --storage-location azure
+velero backup create nginx-backup --include-namespaces nginx-example --storage-location azure --default-volumes-to-restic
 kubectl delete namespaces nginx-example
 velero restore create --from-backup nginx-backup
 ```

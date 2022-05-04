@@ -1,3 +1,5 @@
+data "azurerm_client_config" "current" {}
+
 locals {
   backup_location = "eastus2"
 }
@@ -29,11 +31,17 @@ resource "azurerm_storage_container" "bucket" {
 # Create Application registration for velero
 resource "azuread_application" "velero" {
   display_name = "velero_sp"
+  owners = [
+    data.azurerm_client_config.current.object_id,
+  ]
 }
 
 # Create Service principal for velero
 resource "azuread_service_principal" "velero" {
   application_id = azuread_application.velero.application_id
+  owners = [
+    data.azurerm_client_config.current.object_id,
+  ]
 }
 
 # Create velero's Service principal password
