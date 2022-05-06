@@ -177,7 +177,17 @@ resource runner 'Microsoft.App/containerApps@2022-01-01-preview' = {
       ]
       scale: {
         minReplicas: 1
-        maxReplicas: 1
+        maxReplicas: 5
+        rules: [
+          {
+            name: 'http-rule'
+            http: {
+              metadata: {
+                concurrentRequests: '5'
+              }
+            }
+          }
+        ]
       }
     }
   }

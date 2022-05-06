@@ -33,4 +33,9 @@ app.MapGet("/{bibNumber:int}", (int bibNumber) =>
         return runner;
     });
 
+app.MapGet("/hello", () =>
+    {
+        return Results.Ok("Hello Global Azure 2022");
+    });
+
 app.Run();
