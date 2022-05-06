@@ -17,7 +17,19 @@ ContainerAppConsoleLogs_CL
 | where ContainerAppName_s == 'race-control' 
 | project State_Message_s, TimeGenerated 
 | order by TimeGenerated desc 
-``` 
+```
+
+# Log stream
+
+``` shell
+az containerapp logs show -n race-control -g aca-race
+```
+
+# Connect to Console
+
+``` shell
+az containerapp exec -n race-control -g aca-race --command bash
+```
 
 # Cleanup
 
