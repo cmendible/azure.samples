@@ -38,6 +38,16 @@ resource "helm_release" "velero" {
   }
 
   set {
+    name  = "configuration.backupStorageLocation.provider"
+    value = "azure"
+  }
+
+  set {
+    name  = "configuration.backupStorageLocation.default"
+    value = true
+  }
+
+  set {
     name  = "configuration.backupStorageLocation.bucket"
     value = "velero"
   }
@@ -68,8 +78,33 @@ resource "helm_release" "velero" {
   }
 
   set {
-    name  = "configuration.volumeSnapshotLocation.name"
-    value = "azure"
+    name  = "configuration.defaultVolumesToRestic"
+    value = true
+  }
+
+  set {
+    name  = "configuration.resticTimeout"
+    value = "6h"
+  }
+
+  set {
+    name  = "restic.resources.requests.cpu"
+    value = "500m"
+  }
+
+  set {
+    name  = "restic.resources.requests.memory"
+    value = "512Mi"
+  }
+
+  set {
+    name  = "restic.resources.limits.cpu"
+    value = "1000m"
+  }
+
+  set {
+    name  = "restic.resources.limits.memory"
+    value = "2048Mi"
   }
 
   set {
