@@ -1,7 +1,7 @@
 data "azurerm_client_config" "current" {}
 
 locals {
-  backup_location = "eastus2"
+  backup_location = "northeurope"
 }
 
 # Create Resource Group
