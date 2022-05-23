@@ -36,6 +36,20 @@ spec:
       storage: 50Mi
 
 ---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-azurefile
+  namespace: nginx-example
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 100Gi
+  storageClassName: azurefile-csi
+
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -55,6 +69,9 @@ spec:
         - name: data
           persistentVolumeClaim:
            claimName: data
+        - name: azfiles
+          persistentVolumeClaim:
+           claimName: pvc-azurefile
       containers:
       - image: nginx:1.17.6
         name: nginx
@@ -64,7 +81,10 @@ spec:
           - mountPath: "/var/data"
             name: data
             readOnly: false
-  
+          - mountPath: "/var/azfiles"
+            name: azfiles
+            readOnly: false
+ 
 ---
 apiVersion: v1
 kind: Service
