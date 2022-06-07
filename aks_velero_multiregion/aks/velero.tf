@@ -73,13 +73,19 @@ resource "helm_release" "velero" {
   }
 
   set {
+    name  = "configuration.features"
+    value = "EnableCSI"
+  }
+
+  set {
     name  = "configuration.volumeSnapshotLocation.name"
     value = "azure"
   }
 
+  # Do not use restic as default method
   set {
     name  = "configuration.defaultVolumesToRestic"
-    value = true
+    value = false
   }
 
   set {
@@ -109,12 +115,12 @@ resource "helm_release" "velero" {
 
   set {
     name  = "initContainers[0].name"
-    value = "velero-plugin-for-microsoft-azure"
+    value = "velero-plugin-for-csi"
   }
 
   set {
     name  = "initContainers[0].image"
-    value = "velero/velero-plugin-for-microsoft-azure:master"
+    value = "velero/velero-plugin-for-csi:v0.2.0"
   }
 
   set {
@@ -124,6 +130,26 @@ resource "helm_release" "velero" {
 
   set {
     name  = "initContainers[0].volumeMounts[0].name"
+    value = "plugins"
+  }
+
+  set {
+    name  = "initContainers[1].name"
+    value = "velero-plugin-for-microsoft-azure"
+  }
+
+  set {
+    name  = "initContainers[1].image"
+    value = "velero/velero-plugin-for-microsoft-azure:master"
+  }
+
+  set {
+    name  = "initContainers[1].volumeMounts[0].mountPath"
+    value = "/target"
+  }
+
+  set {
+    name  = "initContainers[1].volumeMounts[0].name"
     value = "plugins"
   }
 }
