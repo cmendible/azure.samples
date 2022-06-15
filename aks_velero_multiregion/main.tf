@@ -10,7 +10,7 @@ resource "azurerm_resource_group" "rg" {
   location = local.backup_location
 }
 
-# Create the "private" Storage Account.
+# Create the Storage Account required by velero.
 resource "azurerm_storage_account" "sa" {
   name                      = var.sa_name
   resource_group_name       = azurerm_resource_group.rg.name
@@ -20,13 +20,12 @@ resource "azurerm_storage_account" "sa" {
   enable_https_traffic_only = true
 }
 
-# Create input container
+# Create velero container
 resource "azurerm_storage_container" "bucket" {
   name                  = "velero"
   container_access_type = "private"
   storage_account_name  = azurerm_storage_account.sa.name
 }
-
 
 # Create Application registration for velero
 resource "azuread_application" "velero" {
