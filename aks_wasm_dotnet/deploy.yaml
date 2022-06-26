@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: wasm
+  name: wasm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wasm
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: wasm
+      annotations:
+        alpha.wagi.krustlet.dev/default-host: "0.0.0.0:3001"
+        alpha.wagi.krustlet.dev/modules: |
+          {
+            "wasm": {"route": "/..."}
+          }
+    spec:
+      hostNetwork: true
+      containers:
+        - name: wasm
+          image: wasmcfm.azurecr.io/sample:v1
+          imagePullPolicy: Always
+      nodeSelector:
+        kubernetes.io/arch: "wasm32-wagi"
+      tolerations:
+        - key: "kubernetes.io/arch"
+          operator: "Equal"
+          value: "wasm32-wagi"
+          effect: "NoExecute"
+        - key: "kubernetes.io/arch"
+          operator: "Equal"
+          value: "wasm32-wagi"
+          effect: "NoSchedule"
