@@ -17,4 +17,6 @@ az aks get-credentials --resource-group $resource_group --name $aks_name
 # Before running commands against the cluster, change kubeconfig's cluster server url with the gateway's FQDN or IP
 # Cause I'm using a self-signed cetificate I used kubectl with the --insecure-skip-tls-verify flag
 kubectl get po --insecure-skip-tls-verify
+kubectl apply -f po.yaml --insecure-skip-tls-verify
+kubectl exec -it --insecure-skip-tls-verify test -- sh
 ```
