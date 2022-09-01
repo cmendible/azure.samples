@@ -5,7 +5,11 @@ az feature list -o table --query "[?contains(name, 'Microsoft.ContainerService/W
 
 az provider register --namespace Microsoft.ContainerService
 
-az aks nodepool add --resource-group NetworkWatcherRG --cluster-name wasmnew --name mywasipool --node-count 2 --workload-runtime wasmwasi
+az extension add --name aks-preview
+
+az extension add --name aks-preview
+
+az aks nodepool add --resource-group wasm --cluster-name wasm --name mywasipool --node-count 1 --workload-runtime wasmwasi
 
 ./wasm-to-oci push dotnet_wasm.wasm wasmcfm.azurecr.io/sample:v1
 
