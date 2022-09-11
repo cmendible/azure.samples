@@ -1,0 +1,11 @@
+spin_version = "1"
+name = "spin-test"
+trigger = { type = "http", base = "/" }
+version = "1.0.0"
+
+[[component]]
+id = "dotnet_wasm"
+source = "dotnet_wasm.wasm"
+[component.trigger]
+route = "/"
+executor = { type = "wagi" }
