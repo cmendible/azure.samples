@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wasm-dotnet
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: wasm-dotnet
+  template:
+    metadata:
+      labels:
+        app: wasm-dotnet
+    spec:
+      runtimeClassName: wasmtime-spin
+      containers:
+        - name: testwasm
+          image: wasmcfm.azurecr.io/sample:v1
+          imagePullPolicy: Always
+          command: ["/"]
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wasm-dotnet
+spec:
+  type: ClusterIP
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  selector:
+    app: wasm-dotnet
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: wasm-dotnet
+  annotations:
+    ingress.kubernetes.io/ssl-redirect: "false"
+    kubernetes.io/ingress.class: traefik
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: wasm-dotnet
+                port:
+                  number: 80

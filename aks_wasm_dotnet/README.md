@@ -1,27 +1,50 @@
-``` bash
-az feature register --namespace "Microsoft.ContainerService" --name "WasmNodePoolPreview"
 
-az feature list -o table --query "[?contains(name, 'Microsoft.ContainerService/WasmNodePoolPreview')].{Name:name,State:properties.state}"
+## .NET WASM sample on k3d/spin/runwasi 
 
-az provider register --namespace Microsoft.ContainerService
+### Azure Container Registry
 
-az extension add --name aks-preview
-
-az extension add --name aks-preview
-
-az aks nodepool add --resource-group wasm --cluster-name wasm --name mywasipool --node-count 1 --workload-runtime wasmwasi
-
-./wasm-to-oci push dotnet_wasm.wasm wasmcfm.azurecr.io/sample:v1
-
+```bash
+az group create --name wasm --location westeurope
+az acr create --resource-group wasm --name wasmcfm --sku Standard
 az acr update --name wasmcfm --anonymous-pull-enabled
-
-kubectl apply -f ./deploy.yaml
-
-helm repo add bitnami https://charts.bitnami.com/bitnami
-helm repo update
-helm install hello-wasi bitnami/nginx -f values.yaml
 ```
 
-Reference:
+### Build .NET sample and image
 
-[AKS: Use WASI Node Pools](https://docs.microsoft.com/en-us/azure/aks/use-wasi-node-pools)
+```bash	
+cd ./dotnet_wasm
+dotnet build
+docker build -t wasmcfm.azurecr.io/sample:v1 .
+az acr login -n wasmcfm
+docker push wasmcfm.azurecr.io/sample:v1
+```
+
+### Install k3d Clsuter
+
+```bash
+k3d cluster create netcoreconf --image ghcr.io/deislabs/containerd-wasm-shims/examples/k3d:latest -p "8081:80@loadbalancer" --agents 2
+```
+
+### Deploy RuntimeClass
+
+```bash
+kubectl apply -f ./deploy/runtime.yaml
+```
+
+### Deploy .NET sample
+
+```bash
+kubectl apply -f ./deploy/workload.yaml
+```
+
+### Test .NET sample
+
+```bash
+curl http://localhost:8081
+```
+
+### Delete k3d Cluster
+
+```bash
+k3d cluster delete netcoreconf
+```
