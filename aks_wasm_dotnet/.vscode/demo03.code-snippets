@@ -1,0 +1,11 @@
+{
+	"demo 3 docker": {
+		"prefix": "cfm_dot_net_sample_03",
+		"body": [
+			"FROM scratch",
+			"COPY ./bin/Debug/net7.0/dotnet_wasm.wasm .",
+			"COPY ./spin.toml ."
+		],
+		"description": "Demo 3 dockerfile"
+	}
+}
