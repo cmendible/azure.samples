@@ -1,3 +1,9 @@
+## ASP.NET Core WASM sample
+
+```bash
+dotnet build
+wasmtime .\bin\Debug\net7.0\aspnetcore_wasm.wasm --tcplisten localhost:8000
+```
 
 ## .NET WASM sample on k3d/spin/runwasi 
 
