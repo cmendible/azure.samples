@@ -8,7 +8,7 @@ param location string = resourceGroup().location
 // param subnetName string
 
 resource storage 'Microsoft.Storage/storageAccounts@2021-08-01' = {
-  name: 'daprtwitterstorage'
+  name: 'daprcfmstorage'
   location: location
   kind: 'StorageV2'
   sku: {

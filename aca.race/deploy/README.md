@@ -15,7 +15,7 @@ az deployment group create -g aca-race --template-file main.bicep
 ``` shell
 ContainerAppConsoleLogs_CL 
 | where ContainerAppName_s == 'race-control' 
-| project State_Message_s, TimeGenerated 
+| project Log_State_Message_s, TimeGenerated 
 | order by TimeGenerated desc 
 ```
 

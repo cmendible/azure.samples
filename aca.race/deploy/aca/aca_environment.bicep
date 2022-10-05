@@ -8,7 +8,7 @@ param vnetId string
 param containerName string = 'tweets'
 
 @description('Storage Account Name')
-param accountName string = 'daprtwitterstorage'
+param accountName string = 'daprcfmstorage'
 
 @description('Storage Account Key')
 param storageaccountkey string
