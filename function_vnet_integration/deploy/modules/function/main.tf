@@ -46,13 +46,14 @@ resource "azurerm_linux_function_app" "func_app" {
   }
 
   app_settings = {
-    https_only                               = true
-    WEBSITE_CONTENTAZUREFILECONNECTIONSTRING = var.storage_primary_connection_string
-    WEBSITE_CONTENTSHARE                     = var.storage_content_share_name
-    WEBSITE_CONTENTOVERVNET                  = "1"
+    https_only                                   = true
+    WEBSITE_CONTENTAZUREFILECONNECTIONSTRING     = var.storage_primary_connection_string
+    WEBSITE_CONTENTSHARE                         = var.storage_content_share_name
+    WEBSITE_CONTENTOVERVNET                      = "1"
+    SCM_DO_BUILD_DURING_DEPLOYMENT               = false
+    WEBSITE_RUN_FROM_PACKAGE                     = 1
+    WEBSITE_OVERRIDE_STICKY_DIAGNOSTICS_SETTINGS = 0 // Fixes slot swap issue (https://github.com/MicrosoftDocs/azure-docs-pr/pull/219797)
     # WEBSITE_DNS_SERVER                       = var.name_server_ip
-    SCM_DO_BUILD_DURING_DEPLOYMENT = false
-    WEBSITE_RUN_FROM_PACKAGE       = 1
     # FUNCTIONS_WORKER_PROCESS_COUNT           = "1"
   }
 }
