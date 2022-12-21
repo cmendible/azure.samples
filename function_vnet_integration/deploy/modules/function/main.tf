@@ -30,6 +30,7 @@ resource "azurerm_linux_function_app" "func_app" {
   storage_account_access_key  = var.storage_primary_access_key
   functions_extension_version = "~4"
   https_only                  = true
+  virtual_network_subnet_id   = var.vnet_integration_subnet_id
   tags                        = var.tags
 
   site_config {
@@ -56,10 +57,37 @@ resource "azurerm_linux_function_app" "func_app" {
     # WEBSITE_DNS_SERVER                       = var.name_server_ip
     # FUNCTIONS_WORKER_PROCESS_COUNT           = "1"
   }
+
+  # sticky_settings {
+  #   app_setting_names = [
+  #   ]
+  # }
 }
 
-# Enable Regional VNet integration. Function --> service Subnet 
-resource "azurerm_app_service_virtual_network_swift_connection" "vnet_integration" {
-  app_service_id = azurerm_linux_function_app.func_app.id
-  subnet_id      = var.vnet_integration_subnet_id
+resource "azurerm_linux_function_app_slot" "slot" {
+  name                 = "pre"
+  function_app_id      = azurerm_linux_function_app.func_app.id
+  storage_account_name = var.storage_name
+
+  app_settings = {
+    WEBSITE_CONTENTAZUREFILECONNECTIONSTRING     = var.storage_primary_connection_string
+    WEBSITE_CONTENTSHARE                         = "${var.storage_content_share_name}-pre"
+    WEBSITE_CONTENTOVERVNET                      = "1"
+    SCM_DO_BUILD_DURING_DEPLOYMENT               = false
+    WEBSITE_OVERRIDE_STICKY_DIAGNOSTICS_SETTINGS = 0 // Fixes slot swap issue (https://github.com/MicrosoftDocs/azure-docs-pr/pull/219797)
+    # WEBSITE_RUN_FROM_PACKAGE                     = 1 // if you swap slots this setting  will be removed since this value is commented.
+  }
+
+  site_config {
+    application_insights_key               = azurerm_application_insights.ai.instrumentation_key
+    application_insights_connection_string = azurerm_application_insights.ai.connection_string
+    remote_debugging_enabled               = false
+    remote_debugging_version               = "VS2019"
+    vnet_route_all_enabled                 = true
+    runtime_scale_monitoring_enabled       = true
+    application_stack {
+      node_version = "16"
+    }
+    pre_warmed_instance_count = 1
+  }
 }

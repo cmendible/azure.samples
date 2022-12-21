@@ -28,3 +28,9 @@ resource "azurerm_storage_share" "content_share" {
   storage_account_name = azurerm_storage_account.sa.name
   quota                = "10"
 }
+
+resource "azurerm_storage_share" "content_share_pre" {
+  name                 = "${var.storage_account_name}-pre"
+  storage_account_name = azurerm_storage_account.sa.name
+  quota                = "10"
+}
