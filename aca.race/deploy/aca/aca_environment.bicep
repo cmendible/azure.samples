@@ -55,8 +55,7 @@ resource app_environment 'Microsoft.App/managedEnvironments@2022-01-01-preview' 
     }
     vnetConfiguration: {
       internal: true
-      infrastructureSubnetId: '${vnetId}/subnets/controlplane'
-      runtimeSubnetId: '${vnetId}/subnets/apps'
+      infrastructureSubnetId: '${vnetId}/subnets/apps'
     }
   }
 }
