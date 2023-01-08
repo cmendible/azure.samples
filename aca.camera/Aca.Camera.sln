@@ -1,0 +1,45 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30114.105
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CameraService", "src\CameraService\CameraService.csproj", "{0DE5D578-9DCA-4E30-8ED0-3C412C7A48B1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CameraControlService", "src\CameraControlService\CameraControlService.csproj", "{FF06E45F-865B-4420-8B75-DB70ED57ACAB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NotificationService", "src\NotificationService\NotificationService.csproj", "{AA6C912B-EFAF-43D3-A2A4-506F0A1821C1}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{DD83AB62-DD46-4797-8B90-A46BF1BA1AE5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CameraSimulator", "src\CameraSimulator\CameraSimulator.csproj", "{6E1CDBDC-9CDE-4D2B-9D8D-4DC5C6E8688E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0DE5D578-9DCA-4E30-8ED0-3C412C7A48B1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0DE5D578-9DCA-4E30-8ED0-3C412C7A48B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0DE5D578-9DCA-4E30-8ED0-3C412C7A48B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0DE5D578-9DCA-4E30-8ED0-3C412C7A48B1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FF06E45F-865B-4420-8B75-DB70ED57ACAB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FF06E45F-865B-4420-8B75-DB70ED57ACAB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FF06E45F-865B-4420-8B75-DB70ED57ACAB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FF06E45F-865B-4420-8B75-DB70ED57ACAB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AA6C912B-EFAF-43D3-A2A4-506F0A1821C1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AA6C912B-EFAF-43D3-A2A4-506F0A1821C1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AA6C912B-EFAF-43D3-A2A4-506F0A1821C1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AA6C912B-EFAF-43D3-A2A4-506F0A1821C1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6E1CDBDC-9CDE-4D2B-9D8D-4DC5C6E8688E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6E1CDBDC-9CDE-4D2B-9D8D-4DC5C6E8688E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6E1CDBDC-9CDE-4D2B-9D8D-4DC5C6E8688E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6E1CDBDC-9CDE-4D2B-9D8D-4DC5C6E8688E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{6E1CDBDC-9CDE-4D2B-9D8D-4DC5C6E8688E} = {DD83AB62-DD46-4797-8B90-A46BF1BA1AE5}
+	EndGlobalSection
+EndGlobal
