@@ -4,13 +4,11 @@ param location string = resourceGroup().location
 @description('Specifies the VNET.')
 param vnetId string
 
-@description('Container Name')
-param containerName string = 'tweets'
-
 @description('Storage Account Name')
 param accountName string = 'daprcfmstorage'
 
 @description('Storage Account Key')
+@secure()
 param storageaccountkey string
 
 @description('EventHubs Connection String')
