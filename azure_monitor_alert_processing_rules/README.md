@@ -1,0 +1,2 @@
+* [Alert processing rules for Azure Monitor alerts - Azure Monitor | Microsoft Learn](https://learn.microsoft.com/en-us/azure/azure-monitor/alerts/alerts-processing-rules)
+* [Alert schema definitions in Azure Monitor - Azure Monitor | Microsoft Learn](https://learn.microsoft.com/en-us/azure/azure-monitor/alerts/alerts-common-schema-definitions#monitoringservice--resource-health)
