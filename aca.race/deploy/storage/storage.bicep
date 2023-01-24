@@ -8,7 +8,7 @@ param location string = resourceGroup().location
 // param subnetName string
 
 resource storage 'Microsoft.Storage/storageAccounts@2021-08-01' = {
-  name: 'daprcfmstorage'
+  name: 'dapracastorage'
   location: location
   kind: 'StorageV2'
   sku: {
@@ -19,13 +19,13 @@ resource storage 'Microsoft.Storage/storageAccounts@2021-08-01' = {
   }
 }
 
-resource container 'Microsoft.Storage/storageAccounts/blobServices/containers@2021-08-01' = {
-  name: '${storage.name}/default/tweets'
+resource subscribers 'Microsoft.Storage/storageAccounts/blobServices/containers@2021-08-01' = {
+  name: '${storage.name}/default/subscribers'
   properties: {}
 }
 
-resource subscribers 'Microsoft.Storage/storageAccounts/blobServices/containers@2021-08-01' = {
-  name: '${storage.name}/default/subscribers'
+resource checkpoint 'Microsoft.Storage/storageAccounts/blobServices/containers@2021-08-01' = {
+  name: '${storage.name}/default/checkpoint'
   properties: {}
 }
 

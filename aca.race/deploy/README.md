@@ -1,7 +1,7 @@
 # Create the resource group
 
 ``` shell
-az group create -n aca-race -l eastus
+az group create -n aca-race -l westeurope
 ```
 
 # Create the bicep deployment

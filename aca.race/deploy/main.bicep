@@ -73,7 +73,16 @@ resource race_control 'Microsoft.App/containerApps@2022-01-01-preview' = {
         external: true
         targetPort: 80
       }
-      secrets: []
+      secrets: [
+        {
+          name: 'eventhub-connectionstring'
+          value: evh.outputs.connectionString
+        }
+        {
+          name: 'storage-connectionstring'
+          value: storage.outputs.blobConnectionString
+        }
+      ]
       dapr: {
         enabled: true
         appId: 'race-control'
@@ -86,7 +95,16 @@ resource race_control 'Microsoft.App/containerApps@2022-01-01-preview' = {
         {
           image: 'cmendibl3/aca-race-control'
           name: 'race-control'
-          env: []
+          env: [
+            {
+              name: 'EVENTHUB_CONNECTIONSTRING'
+              secretRef: 'eventhub-connectionstring'
+            }
+            {
+              name: 'STORAGE_CONNECTIONSTRING'
+              secretRef: 'storage-connectionstring'
+            }
+          ]
           resources: {
             cpu: '0.5'
             memory: '1Gi'
@@ -94,8 +112,24 @@ resource race_control 'Microsoft.App/containerApps@2022-01-01-preview' = {
         }
       ]
       scale: {
-        minReplicas: 1
-        maxReplicas: 1
+        minReplicas: 0
+        maxReplicas: 10
+        rules: [
+          {
+            name: 'evh-rule'
+            custom: {
+              type: 'azure-eventhub'
+              metadata: {
+                connectionFromEnv: 'EVENTHUB_CONNECTIONSTRING'
+                storageConnectionFromEnv: 'STORAGE_CONNECTIONSTRING'
+                consumerGroup: '$Default'
+                unprocessedEventThreshold: '10'
+                activationUnprocessedEventThreshold: '10'
+                blobContainer: 'checkpoint'
+              }
+            }
+          }
+        ]
       }
     }
   }

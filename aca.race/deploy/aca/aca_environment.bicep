@@ -5,7 +5,7 @@ param location string = resourceGroup().location
 param vnetId string
 
 @description('Storage Account Name')
-param accountName string = 'daprcfmstorage'
+param accountName string = 'dapracastorage'
 
 @description('Storage Account Key')
 @secure()
