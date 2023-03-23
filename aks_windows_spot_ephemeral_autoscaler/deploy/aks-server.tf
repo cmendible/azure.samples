@@ -46,18 +46,18 @@ resource "azurerm_kubernetes_cluster" "k8s" {
 resource "azurerm_kubernetes_cluster_node_pool" "windows" {
   kubernetes_cluster_id = azurerm_kubernetes_cluster.k8s.id
   name                  = "win"
-  priority        = "Spot"
-  eviction_policy = "Delete"
-  spot_max_price  = -1 # note: this is the "maximum" price
-  os_type = "Windows"
+  priority              = "Spot"
+  eviction_policy       = "Delete"
+  spot_max_price        = -1 # note: this is the "maximum" price
+  os_type               = "Windows"
   # "The virtual machine size Standard_D2s_v3 has a cache size of 53687091200 bytes, but the OS disk requires 137438953472 bytes. Use a VM size with larger cache or disable ephemeral OS."
   # https://docs.microsoft.com/en-us/azure/virtual-machines/ephemeral-os-disks#size-requirements
   vm_size             = "Standard_DS3_v2"
   os_disk_type        = "Ephemeral"
-  node_count          = 0
+  node_count          = 1
   enable_auto_scaling = true
   max_count           = 3
-  min_count           = 0
+  min_count           = 1
 }
 
 data "azurerm_resource_group" "node_resource_group" {

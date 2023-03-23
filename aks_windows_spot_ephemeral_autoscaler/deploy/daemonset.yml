@@ -1,0 +1,112 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  creationTimestamp: null
+  name: initcontainers
+spec: {}
+status: {}
+
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: high-priority-agents
+value: 1000000
+preemptionPolicy: Never
+globalDefault: false
+description: "Priority class use for high priority agents."
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: entrypoint
+  namespace: initcontainers
+  labels:
+    app: default-init
+data:
+  entrypoint.ps1: |
+    foreach($key in [System.Environment]::GetEnvironmentVariables('Process').Keys) { 
+
+    if ([System.Environment]::GetEnvironmentVariable($key, 'Machine') -eq $null) {
+
+        $value = [System.Environment]::GetEnvironmentVariable($key, 'Process')
+
+        [System.Environment]::SetEnvironmentVariable($key, $value, 'Machine')
+
+      }
+    }
+
+
+    $PSDefaultParameterValues['Out-File:Encoding'] = 'ASCII'
+    $configFile = 'C:\k\azurecni\netconf\10-azure.conflist'
+    $env:CNI_PATH='C:\k\azurecni\bin'
+    $env:PATH="$env:CNI_PATH;"+$env:PATH
+    $content = Get-Content -Raw -Path $configFile
+
+    $jobj = ConvertFrom-Json $content
+    $additionalArgs = $jobj.plugins[0].AdditionalArgs
+
+    foreach ($arg in $additionalArgs)
+    {
+      if ($arg.Name -eq 'EndpointPolicy' -and $arg.Value.Type -eq 'OutBoundNAT')
+      {
+        # Excluding Application Gateway Subnet address space
+        if ($arg.Value.ExceptionList -notcontains "10.71.32.0/23")
+        {
+          $arg.Value.ExceptionList += "10.71.32.0/23"
+        }
+      }
+    }
+
+    $jsonconfig=ConvertTo-Json $jobj -Depth 10
+    $res=(echo $jsonconfig | Out-File -FilePath $configFile)
+    echo $res
+
+    while ($true) { Start-Sleep -Seconds 3600 }
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: node-initializer
+  namespace: initcontainers
+  labels:
+    app: default-init
+spec:
+  selector:
+    matchLabels:
+      app: default-init
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        name: node-initializer
+        app: default-init
+    spec:
+      priorityClassName: high-priority-agents
+      nodeSelector:
+        "kubernetes.io/os": windows
+      volumes:
+        - name: rootmount
+          hostPath:
+            path: c:/k
+        - name: entrypoint
+          configMap:
+            name: entrypoint
+            defaultMode: 0744
+      containers:
+        #- image: "rancher/pause:3.6"
+        #  name: pause
+        - image: mcr.microsoft.com/windows/servercore:ltsc2019
+          name: node-initializer
+          command:
+            - powershell
+            - c:/scripts/entrypoint.ps1
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: entrypoint
+              mountPath: c:/scripts
+            - name: rootmount
+              mountPath: C:\k\
