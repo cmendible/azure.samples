@@ -1,0 +1,81 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "serversName": {
+            "type": "string"
+        },
+        "resourceTags": {
+            "type": "object"
+        },
+        "sku": {
+            "type": "object"
+        },
+        "serversVersion": {
+            "type": "string"
+        },
+        "availabilityZone": {
+            "type": "string"
+        },
+        "storage": {
+            "type": "object"
+        },
+        "backup": {
+            "type": "object"
+        },
+        "highAvailability": {
+            "type": "object"
+        },
+        "maintenanceWindow": {
+            "type": "object"
+        },
+        "adminPassword": {
+            "type": "securestring"
+        },
+        "array_nulls": {
+            "type": "object"
+        },
+        "application_name": {
+            "type": "object"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.DBforPostgreSQL/flexibleServers",
+            "apiVersion": "2022-01-20-preview",
+            "name": "[parameters('serversName')]",
+            "location": "[resourceGroup().location]",
+            "tags": "[parameters('resourceTags')]",
+            "sku": "[parameters('sku')]",
+            "properties": {
+                "version": "[parameters('serversVersion')]",
+                "storage": "[parameters('storage')]",
+                "backup": "[parameters('backup')]",
+                "highAvailability": "[parameters('highAvailability')]",
+                "maintenanceWindow": "[parameters('maintenanceWindow')]",
+                "administratorLogin": "azureuser",
+                "administratorLoginPassword": "[parameters('adminPassword')]"
+            }
+        },
+        {
+            "type": "Microsoft.DBforPostgreSQL/flexibleServers/configurations",
+            "apiVersion": "2022-01-20-preview",
+            "name": "[concat(parameters('serversName'), '/array_nulls')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('serversName'))]"
+            ],
+            "properties": "[parameters('array_nulls')]"
+        },
+        {
+            "type": "Microsoft.DBforPostgreSQL/flexibleServers/configurations",
+            "apiVersion": "2022-01-20-preview",
+            "name": "[concat(parameters('serversName'), '/application_name')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('serversName'))]",
+                "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers/configurations', parameters('serversName'), 'array_nulls')]"
+            ],
+            "properties": "[parameters('application_name')]"
+        }
+    ]
+}

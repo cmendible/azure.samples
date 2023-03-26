@@ -25,6 +25,18 @@ az acr login -n wasmcfm
 docker push wasmcfm.azurecr.io/sample:v1
 ```
 
+### Install on AKS
+
+```bash
+az aks create --name wasmaks --resource-group wasm -s Standard_DS3_v2 --node-osdisk-type Ephemeral
+az aks nodepool add --resource-group wasm --cluster-name wasmaks --name mywasipool --node-count 1 --workload-runtime WasmWasi
+az aks get-credentials --resource-group wasm --name wasmaks
+kubectl apply -f ./deploy/aks/runtime.yml
+kubectl apply -f ./deploy/aks/workload.yml
+kubectl run -it busybox --image busybox -- sh
+wget http://wasm-dotnet/ -O-
+```
+
 ### Install k3d Clsuter
 
 ```bash

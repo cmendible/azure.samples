@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wasm-dotnet
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: wasm-dotnet
+  template:
+    metadata:
+      labels:
+        app: wasm-dotnet
+    spec:
+      runtimeClassName: wasmtime-spin-v1
+      containers:
+        - name: testwasm
+          image: wasmcfm.azurecr.io/sample:v1
+          imagePullPolicy: Always
+          command: ["/"]
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wasm-dotnet
+spec:
+  type: ClusterIP
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  selector:
+    app: wasm-dotnet

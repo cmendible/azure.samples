@@ -1,9 +1,15 @@
 # Deploy Kubernetes
 resource "azurerm_kubernetes_cluster" "k8s" {
-  name                = var.cluster_name
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-  dns_prefix          = var.dns_prefix
+  name                      = var.cluster_name
+  location                  = azurerm_resource_group.rg.location
+  resource_group_name       = azurerm_resource_group.rg.name
+  dns_prefix                = var.dns_prefix
+  oidc_issuer_enabled       = true
+  workload_identity_enabled = true
+  role_based_access_control_enabled = true
+  oms_agent {
+    log_analytics_workspace_id = azurerm_log_analytics_workspace.logs.id
+  }
 
   default_node_pool {
     name                = "default"
@@ -31,33 +37,6 @@ resource "azurerm_kubernetes_cluster" "k8s" {
     network_plugin     = "azure"
     network_policy     = "calico"
   }
-
-  role_based_access_control {
-    enabled = true
-  }
-
-  addon_profile {
-    kube_dashboard {
-      enabled = false
-    }
-  }
-}
-
-resource "azurerm_kubernetes_cluster_node_pool" "windows" {
-  kubernetes_cluster_id = azurerm_kubernetes_cluster.k8s.id
-  name                  = "win"
-  priority              = "Spot"
-  eviction_policy       = "Delete"
-  spot_max_price        = -1 # note: this is the "maximum" price
-  os_type               = "Windows"
-  # "The virtual machine size Standard_D2s_v3 has a cache size of 53687091200 bytes, but the OS disk requires 137438953472 bytes. Use a VM size with larger cache or disable ephemeral OS."
-  # https://docs.microsoft.com/en-us/azure/virtual-machines/ephemeral-os-disks#size-requirements
-  vm_size             = "Standard_DS3_v2"
-  os_disk_type        = "Ephemeral"
-  node_count          = 1
-  enable_auto_scaling = true
-  max_count           = 3
-  min_count           = 1
 }
 
 data "azurerm_resource_group" "node_resource_group" {
@@ -75,4 +54,17 @@ resource "azurerm_role_assignment" "kubelet_network_contributor" {
   scope                = azurerm_virtual_network.vnet.id
   role_definition_name = "Network Contributor"
   principal_id         = azurerm_kubernetes_cluster.k8s.identity[0].principal_id
+}
+
+resource "kubernetes_service_account" "default" {
+  metadata {
+    name      = "workload-identity-test-account"
+    namespace = "default"
+    annotations = {
+      "azure.workload.identity/client-id" = azurerm_user_assigned_identity.mi.client_id
+    }
+    labels = {
+      "azure.workload.identity/use" : "true"
+    }
+  }
 }

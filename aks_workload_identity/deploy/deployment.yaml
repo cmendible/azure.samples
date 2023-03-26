@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: az-cli
+  namespace: default
+  labels:
+    app: az-cli
+spec:
+  replicas: 1
+  template:
+    metadata:
+      name: az-cli
+      labels:
+        app: az-cli
+        azure.workload.identity/use: "true"
+      annotations:
+        azure.workload.identity/inject-proxy-sidecar: "true"
+    spec:
+      serviceAccountName: workload-identity-test-account
+      containers:
+        - name: az-cli
+          image: mcr.microsoft.com/azure-cli
+          ports:
+            - containerPort: 80
+          command:
+             - sh
+             - -c
+             - sleep 1d
+  selector:
+    matchLabels:
+      app: az-cli
+      
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: quick-start
+  namespace: default
+  labels:
+    azure.workload.identity/use: "true"
+spec:
+  serviceAccountName: workload-identity-test-account
+  containers:
+    - image: ghcr.io/azure/azure-workload-identity/msal-go
+      name: oidc
+      env:
+      - name: KEYVAULT_URL
+        value: https://kv-aks-cfm.vault.azure.net/
+      - name: SECRET_NAME
+        value: super-secret
+  nodeSelector:
+    kubernetes.io/os: linux

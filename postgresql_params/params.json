@@ -1,0 +1,74 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "serversName": {
+            "value": "cfmpostgretest"
+        },
+        "adminPassword": {
+            "value": "T3@m1739252."
+        },
+        "resourceTags": {
+            "value": {
+                "channel": "",
+                "cia": "BMM",
+                "cost_center": "CC-OE2020",
+                "description": "Azure Flexible Postgre for New Def",
+                "product": "Azure resource for Workload: OE2020",
+                "tracking_code": "tracking_code",
+                "SDHProject": "NEWDEF",
+                "SDHProjectRG": "C3",
+                "SDHResourceType": "PFS",
+                "SDHDependOfResources": "gscd1weulwkoe2020crit046"
+            }
+        },
+        "sku": {
+            "value": {
+                "name": "Standard_D2s_v3",
+                "tier": "GeneralPurpose"
+            }
+        },
+        "serversVersion": {
+            "value": "14"
+        },
+        "availabilityZone": {
+            "value": "1"
+        },
+        "storage": {
+            "value": {
+                "storageSizeGB": 32
+            }
+        },
+        "backup": {
+            "value": {
+                "backupRetentionDays": 7,
+                "geoRedundantBackup": "Disabled"
+            }
+        },
+        "highAvailability": {
+            "value": {
+                "mode": "Disabled"
+            }
+        },
+        "maintenanceWindow": {
+            "value": {
+                "customWindow": "Disabled",
+                "dayOfWeek": 0,
+                "startHour": 0,
+                "startMinute": 0
+            }
+        },
+        "application_name": {
+            "value": {
+                "value": "",
+                "source": "user-override"
+            }
+        },
+        "array_nulls": {
+            "value": {
+                "value": "on",
+                "source": "user-override"
+            }
+        }
+    }
+}
