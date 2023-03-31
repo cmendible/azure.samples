@@ -8,9 +8,24 @@ rm .\kubelogin\
 rm .\kubelogin.zip
 ```
 
+```bash
+wget -O- https://github.com/Azure/kubelogin/releases/download/v0.0.28/kubelogin-linux-arm64.zip > kubelogin.zip
+unzip kubelogin.zip
+mv ./bin/linux_arm64/kubelogin kubelogin
+rm kubelogin.zip
+rm -rf ./bin
+sudo mv kubelogin /usr/local/bin/kubelogin
+```
+
+```bash
+az aks get-credentials --resource-group aks-no-local-accounts --name aksnolocalaccounts
+kubectl get po
+```
 ## Install
 
 ``` shell
 terraform init
 terraform apply -auto-approve
+
+
 ```

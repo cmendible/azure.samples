@@ -59,16 +59,15 @@ resource "azurerm_kubernetes_cluster" "aks" {
     network_policy = "calico"
   }
 
-  role_based_access_control {
-    enabled = true
-    azure_active_directory {
-      admin_group_object_ids = [
-        azuread_group.aks_admins.object_id,
-      ]
-      azure_rbac_enabled = false
-      managed            = true
-      tenant_id          = data.azurerm_subscription.current.tenant_id
-    }
+  role_based_access_control_enabled = true
+
+  azure_active_directory_role_based_access_control {
+    admin_group_object_ids = [
+      azuread_group.aks_admins.object_id,
+    ]
+    azure_rbac_enabled = false
+    managed            = true
+    tenant_id          = data.azurerm_subscription.current.tenant_id
   }
 }
 

@@ -1,14 +1,14 @@
 terraform {
-  required_version = ">= 0.13.5"
+  required_version = ">= 1.3.0"
   required_providers {
     azurerm = {
-      version = "= 2.97.0"
+      version = ">= 3.50.0"
     }
     azuread = {
-      version = "= 1.4.0"
+      version = ">= 2.36.0"
     }
     kubernetes = {
-      version = "= 2.8.0"
+      version = ">= 2.19.0"
     }
   }
 }
@@ -25,7 +25,7 @@ provider "kubernetes" {
   # Using kubelogin to get an AAD token for the cluster.
   exec {
     api_version = "client.authentication.k8s.io/v1beta1"
-    command = "kubelogin"
+    command = "./kubelogin"
     args = [
       "get-token",
       "--environment",
@@ -35,7 +35,7 @@ provider "kubernetes" {
       "--client-id",
       azuread_application.sp.application_id, // Application Id of the Service Principal we'll create via terraform.
       "--client-secret",
-      random_password.passwd.result, // The Service Principal's secret.
+      azuread_service_principal_password.sp_password.value, // The Service Principal's secret.
       "-t",
       data.azurerm_subscription.current.tenant_id, // The AAD Tenant Id.
       "-l",
