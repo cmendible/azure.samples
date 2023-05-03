@@ -36,5 +36,18 @@ curl -k -i -H "Ocp-Apim-Subscription-Key: $key" https://localhost:8081/ip
 ## Purge APIM
 
 ``` shell
-az rest --method delete --header "Accept=application/json" -u 'https://management.azure.com/subscriptions/<subscription id>/providers/Microsoft.ApiManagement/locations/<location>/deletedservices/<apim name>?api-version=2020-06-01-preview'
+az apim deletedservice list
+az apim deletedservice purge --location <location> --service-name <apim name>
 ```
+
+## Service Principal
+
+``` shell
+az ad sp create-for-rbac --name <sp name> --role contributor --scopes /subscriptions/<subscription id> --sdk-auth
+```
+
+## Github Secrets
+
+Create the a secret with json value resulting from the previous step:
+
+AZURE_CREDENTIALS = <JSON_SP_FOR_GITHUB>

@@ -1,0 +1,43 @@
+<policies>
+    <inbound>
+        <base />
+        <set-backend-service base-url="https://conferenceapi.azurewebsites.net" />
+        <trace source="CustomDemoTrace" severity="information">
+            <message>Inbound policy called</message>
+            <metadata name="IpAddress-Value" value="@((string)context.Request.IpAddress)" />
+            <metadata name="Url-Value" value="@((string)context.Request.Url.Path)" />
+            <metadata name="Authorization-Value" value="@(context.Request.Headers.GetValueOrDefault("Authorization", "No header found for Authorization"))" />
+        </trace>
+         <rate-limit calls="100" renewal-period="60" retry-after-variable-name="retryaftervar" remaining-calls-header-name="xrate-remainingcalls" remaining-calls-variable-name="remainingcallsvar" total-calls-header-name="xrate-totalcalls">
+            <operation name="GetSession" calls="5" renewal-period="60" />
+        </rate-limit>
+    </inbound>
+    <backend>
+        <base />
+    </backend>
+    <outbound>
+        <base />
+        <set-header name="traceparent" exists-action="skip">
+            <value>@(context.Request.Headers.GetValueOrDefault("traceparent", ""))</value>
+        </set-header>
+
+         <set-header name="X-AspNet-Version" exists-action="delete" />
+         <set-header name="X-Powered-By" exists-action="delete" />
+
+        <choose>
+            <when condition="@(context.Response.StatusCode == 500)">
+                <return-response>
+                    <set-status code="550" reason="backend call error captured by APIM" />
+                    <set-header name="CustomHeader" exists-action="override">
+                        <value>Error captured and sanitized by APIM</value>
+                    </set-header>
+                    <set-body>Error captured and sanitized by APIM</set-body>
+                </return-response>
+            </when>
+        </choose>
+
+    </outbound>
+    <on-error>
+        <base />
+    </on-error>
+</policies>

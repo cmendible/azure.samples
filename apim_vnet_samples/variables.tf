@@ -7,11 +7,11 @@ variable "location" {
 }
 
 variable "api_management_name" {
-  default = "apim-cfm"
+  default = "apim-231418"
 }
 
 variable "nsg_name" {
-  default = "apim-cfm-nsg"
+  default = "apim-nsg"
 }
 
 variable "publisher_name" {
