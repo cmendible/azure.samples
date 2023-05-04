@@ -1,5 +1,5 @@
 resource "azurerm_api_management_backend" "backend" {
-  name                = "me"
+  name                = "mendibledotcom"
   resource_group_name = azurerm_resource_group.rg.name
   api_management_name = azurerm_api_management.apim.name
   protocol            = "http"
@@ -8,12 +8,12 @@ resource "azurerm_api_management_backend" "backend" {
 
 resource "azurerm_api_management_api" "me" {
   count               = 2
-  name                = "me_${count.index}"
+  name                = "mendibledotcom_${count.index}"
   resource_group_name = azurerm_resource_group.rg.name
   api_management_name = azurerm_api_management.apim.name
   revision            = "1"
-  display_name        = "me_${count.index}"
-  path                = "me_${count.index}"
+  display_name        = "mendibledotcom_${count.index}"
+  path                = "mendibledotcom_${count.index}"
   protocols           = ["https"]
 
   subscription_required = false
@@ -21,14 +21,14 @@ resource "azurerm_api_management_api" "me" {
 
 resource "azurerm_api_management_api_operation" "me_operation" {
   count               = 2
-  operation_id        = "me-${count.index}"
+  operation_id        = "mendibledotcom_-${count.index}"
   api_name            = azurerm_api_management_api.me[count.index].name
   api_management_name = azurerm_api_management.apim.name
   resource_group_name = azurerm_resource_group.rg.name
   display_name        = "GET"
   method              = "GET"
   url_template        = "/"
-  description         = "me reusing backend"
+  description         = "mendible.com reusing backend"
 
   response {
     status_code = 200
