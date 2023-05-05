@@ -7,7 +7,7 @@ variable "location" {
 }
 
 variable "api_management_name" {
-  default = "apim-cfm"
+  default = "apim-cfm-demo"
 }
 
 variable "publisher_name" {

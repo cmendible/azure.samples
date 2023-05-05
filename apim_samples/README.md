@@ -12,7 +12,7 @@ curl -k -i $apim_url
 HTTP/1.1 401 Access Denied
 Content-Length: 152
 Content-Type: application/json
-WWW-Authenticate: AzureApiManagementKey realm="https://apim-cfm.azure-api.net/mock",name="Ocp-Apim-Subscription-Key",type="header"
+WWW-Authenticate: AzureApiManagementKey realm="https://apim-cfm-demo.azure-api.net/mock",name="Ocp-Apim-Subscription-Key",type="header"
 Date: Thu, 20 May 2021 06:51:05 GMT
 
 { "statusCode": 401, "message": "Access denied due to missing subscription key. Make sure to include subscription key when making requests to an API." }
