@@ -1,0 +1,126 @@
+<!--
+    IMPORTANT:
+    - Policy elements can appear only within the <inbound>, <outbound>, <backend> section elements.
+    - To apply a policy to the incoming request (before it is forwarded to the backend service), place a corresponding policy element within the <inbound> section element.
+    - To apply a policy to the outgoing response (before it is sent back to the caller), place a corresponding policy element within the <outbound> section element.
+    - To add a policy, place the cursor at the desired insertion point and select a policy from the sidebar.
+    - To remove a policy, delete the corresponding policy statement from the policy document.
+    - Position the <base> element within a section element to inherit all policies from the corresponding section element in the enclosing scope.
+    - Remove the <base> element to prevent inheriting policies from the corresponding section element in the enclosing scope.
+    - Policies are applied in the order of their appearance, from the top down.
+    - Comments within policy elements are not supported and may disappear. Place your comments between policy elements or at a higher level scope.
+-->
+<policies>
+    <inbound>
+        <base />
+        <cors allow-credentials="true">
+            <allowed-origins>
+                <origin>https://contoso-apim.developer.azure-api.net</origin>
+                <origin>https://contoso.com</origin>
+            </allowed-origins>
+            <allowed-methods preflight-result-max-age="300">
+                <method>*</method>
+            </allowed-methods>
+            <allowed-headers>
+                <header>*</header>
+            </allowed-headers>
+            <expose-headers>
+                <header>*</header>
+            </expose-headers>
+        </cors>
+        <trace source="Inbound" severity="information">
+            <message>Inbound policy trace</message>
+            <metadata name="OriginalUrl" value="@(context.Request.OriginalUrl.ToString())" />
+            <metadata name="xtraceidheader" value="@(context.Request.Headers.GetValueOrDefault("x-traceid", ""))" />
+        </trace>
+        <set-header name="traceparent" exists-action="skip">
+            <value>@{
+                var guidBinary = new byte[16];
+                Array.Copy(Guid.NewGuid().ToByteArray(), 0, guidBinary, 0, 10);
+                long time = DateTime.Now.Ticks;
+                byte[] bytes = new byte[6];
+                unchecked
+                {
+                       bytes[5] = (byte)(time >> 40);
+                       bytes[4] = (byte)(time >> 32);
+                       bytes[3] = (byte)(time >> 24);
+                       bytes[2] = (byte)(time >> 16);
+                       bytes[1] = (byte)(time >> 8);
+                       bytes[0] = (byte)(time);
+                }
+                Array.Copy(bytes, 0, guidBinary, 10, 6);
+                return new Guid(guidBinary).ToString();
+            }</value>
+        </set-header>
+        <set-header name="x-traceid" exists-action="skip">
+            <value>@(context.Request.Headers.GetValueOrDefault("traceparent", ""))</value>
+        </set-header>
+        <set-header name="span-id" exists-action="skip">
+            <value>@(context.Request.Headers.GetValueOrDefault("traceparent", ""))</value>
+        </set-header>
+        <set-header name="parent-spanID" exists-action="skip">
+            <value>@(context.Request.Headers.GetValueOrDefault("traceparent", ""))</value>
+        </set-header>
+        <rate-limit-by-key calls="10" renewal-period="60" counter-key="AllCalls" increment-condition="@(context.Response.StatusCode == 200)" increment-count="1" remaining-calls-variable-name="remaining-calls-var" remaining-calls-header-name="remaining-calls-header" total-calls-header-name="total-calls-header" />
+        <set-header name="x-appname" exists-action="override">
+            <value>contoso-ListUser</value>
+        </set-header>
+        <!-- Delete headers so backend do not receive them-->
+        <set-header name="X-Forwarded-Host" exists-action="delete" />
+        <set-header name="X-Forwarded-For" exists-action="delete" />
+        <validate-jwt header-name="Authorization" failed-validation-httpcode="401" failed-validation-error-message="contoso Token validation failed" require-signed-tokens="true">
+            <openid-config url="https://login.microsoftonline.com/16b3c013-d300-468d-ac64-7eda0820b6d3/.well-known/openid-configuration" />
+            <audiences>
+                <audience>api://davihern-conference-api</audience>
+            </audiences>
+        </validate-jwt>
+    </inbound>
+    <backend>
+        <forward-request timeout="15" follow-redirects="false" buffer-request-body="false" buffer-response="false" fail-on-error-status-code="false" />
+    </backend>
+    <outbound>
+        <base />
+        <trace source="Outbound" severity="information">
+            <message>Outbound policy trace</message>
+            <metadata name="OriginalUrl" value="@(context.Request.OriginalUrl.ToString())" />
+            <metadata name="xtraceidheader" value="@(context.Request.Headers.GetValueOrDefault("x-traceid", ""))" />
+        </trace>
+        <!-- Remove Headers -->
+        <set-header name="X-AspNet-Version" exists-action="delete" />
+        <set-header name="X-Powered-By" exists-action="delete" />
+        <set-header name="traceparent" exists-action="skip">
+            <value>@(context.Request.Headers.GetValueOrDefault("traceparent", ""))</value>
+        </set-header>
+        <choose>
+            <when condition="@(context.Response.StatusCode == 500)">
+                <return-response>
+                    <set-status code="510" reason="Internal APIM error captured" />
+                    <set-header name="CustomHeader" exists-action="override">
+                        <value>Error captured and sanitized by APIM.</value>
+                    </set-header>
+                    <set-body>@{
+                    var response = "Backend web service error captured and sanitized by APIM. \r\nerror.status.code = " +
+                    context.Response + "\r\nerror.reason.phrase = " + context.Response.StatusCode.ToString() +
+                    "\r\nerror.content = " + context.Request.OriginalUrl;
+                   
+                    return response;
+                    }</set-body>
+                </return-response>
+            </when>
+        </choose>
+    </outbound>
+    <on-error>
+        <base />
+        <trace source="Error" severity="error">
+            <message>Error policy trace</message>
+            <metadata name="OriginalUrl" value="@(context.Request.OriginalUrl.ToString())" />
+        </trace>
+        <set-status code="511" reason="APIM error" />
+        <set-body>@{
+        var response = "error.reason" + context.LastError.Reason +
+        "     \r\nOriginalURL: " + context.Request.OriginalUrl ;
+       
+        return response;
+        }</set-body>
+    </on-error>
+</policies>
