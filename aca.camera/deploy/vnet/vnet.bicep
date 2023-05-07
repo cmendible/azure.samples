@@ -1,5 +1,24 @@
 @description('Specifies the location for resources.')
 param location string = resourceGroup().location
+param firewall_private_ip string = '10.240.0.4'
+
+resource udr 'Microsoft.Network/routeTables@2022-07-01' = {
+  name: 'egress'
+  location: location
+  properties: {
+    disableBgpRoutePropagation: true
+    routes: [
+      {
+        name: 'to-firewall'
+        properties: {
+          addressPrefix: '0.0.0.0/0'
+          nextHopIpAddress: firewall_private_ip
+          nextHopType: 'VirtualAppliance'
+        }
+      }
+    ]
+  }
+}
 
 // Create VNET
 resource vnet 'Microsoft.Network/virtualNetworks@2020-11-01' = {
@@ -13,7 +32,7 @@ resource vnet 'Microsoft.Network/virtualNetworks@2020-11-01' = {
     }
     subnets: [
       {
-        name: 'controlplane'
+        name: 'AzureFirewallSubnet'
         properties: {
           addressPrefix: '10.240.0.0/16'
           serviceEndpoints: []
@@ -27,9 +46,19 @@ resource vnet 'Microsoft.Network/virtualNetworks@2020-11-01' = {
         properties: {
           addressPrefix: '10.241.0.0/16'
           serviceEndpoints: []
-          delegations: []
+          delegations: [
+            {
+              name: 'Microsoft.App/environments'
+              properties: {
+                serviceName: 'Microsoft.App/environments'
+              }
+            }
+          ]
           privateEndpointNetworkPolicies: 'Disabled'
           privateLinkServiceNetworkPolicies: 'Disabled'
+          routeTable: {
+            id: udr.id
+          }
         }
       }
       {
@@ -68,3 +97,4 @@ resource vnet 'Microsoft.Network/virtualNetworks@2020-11-01' = {
 }
 
 output id string = vnet.id
+output name string = vnet.name

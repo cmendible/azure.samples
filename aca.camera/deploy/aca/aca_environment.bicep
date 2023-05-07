@@ -2,20 +2,22 @@
 param location string = resourceGroup().location
 
 @description('Specifies the VNET.')
+param vnetName string
+
+@description('Specifies the VNET resource id')
 param vnetId string
 
 @description('Storage Account Name')
-param accountName string = 'daprcfmstorage'
+param accountName string
 
-@description('Storage Account Key')
-@secure()
-param storageaccountkey string
-
-@description('EventHubs Connection String')
-param evhConnectionString string
+@description('Key Vault Name')
+param keyVaultName string
 
 @description('CosmosDB Name')
 param cosmosDbName string
+
+@description('Managed Identity Client Id')
+param mi_client_id string
 
 resource logs 'Microsoft.OperationalInsights/workspaces@2020-03-01-preview' = {
   name: 'container-apps-logs'
@@ -39,7 +41,7 @@ resource insights 'Microsoft.Insights/components@2020-02-02' = {
 }
 
 // https://github.com/Azure/azure-rest-api-specs/blob/cca8e03063c627f256fe0b3761db82450b25fdbb/specification/app/resource-manager/Microsoft.App/preview/2022-01-01-preview/ManagedEnvironments.json#L660
-resource app_environment 'Microsoft.App/managedEnvironments@2022-01-01-preview' = {
+resource app_environment 'Microsoft.App/managedEnvironments@2022-11-01-preview' = {
   name: 'container-apps-env'
   location: location
   properties: {
@@ -51,10 +53,17 @@ resource app_environment 'Microsoft.App/managedEnvironments@2022-01-01-preview' 
         sharedKey: logs.listKeys().primarySharedKey
       }
     }
+    workloadProfiles: [
+      {
+        name: 'Consumption'
+        workloadProfileType: 'Consumption'
+      }
+    ]
     vnetConfiguration: {
       internal: true
-      infrastructureSubnetId: '${vnetId}/subnets/apps'
+      infrastructureSubnetId: resourceId('Microsoft.Network/virtualNetworks/subnets', vnetName, 'apps')
     }
+    zoneRedundant: false
   }
 }
 
@@ -71,18 +80,38 @@ resource cosmos 'Microsoft.DocumentDB/databaseAccounts@2021-01-15' existing = {
   name: cosmosDbName
 }
 
-resource dapr_state_store 'Microsoft.App/managedEnvironments/daprComponents@2022-01-01-preview' = {
+resource dapr_secret_store 'Microsoft.App/managedEnvironments/daprComponents@2022-11-01-preview' = {
+  name: 'secretstore'
+  parent: app_environment
+  properties: {
+    componentType: 'secretstores.azure.keyvault'
+    version: 'v1'
+    metadata: [
+      {
+        name: 'vaultName'
+        value: keyVaultName
+      }
+      {
+        name: 'azureEnvironment'
+        value: 'AZUREPUBLICCLOUD'
+      }
+      {
+        name: 'azureClientId'
+        value: mi_client_id
+      }
+    ]
+    scopes: []
+  }
+}
+
+resource dapr_state_store 'Microsoft.App/managedEnvironments/daprComponents@2022-11-01-preview' = {
   name: 'statestore'
   parent: app_environment
   properties: {
     componentType: 'state.azure.cosmosdb'
     version: 'v1'
-    secrets: [
-      {
-        name: 'masterkey'
-        value: cosmos.listKeys().primaryMasterKey
-      }
-    ]
+    secretStoreComponent: dapr_secret_store.name
+    secrets: []
     metadata: [
       {
         name: 'url'
@@ -98,7 +127,7 @@ resource dapr_state_store 'Microsoft.App/managedEnvironments/daprComponents@2022
       }
       {
         name: 'masterKey'
-        secretRef: 'masterkey'
+        secretRef: 'cosmosdb-master-key'
       }
       {
         name: 'actorStateStore'
@@ -109,26 +138,18 @@ resource dapr_state_store 'Microsoft.App/managedEnvironments/daprComponents@2022
   }
 }
 
-resource dapr_pub_sub 'Microsoft.App/managedEnvironments/daprComponents@2022-01-01-preview' = {
+resource dapr_pub_sub 'Microsoft.App/managedEnvironments/daprComponents@2022-11-01-preview' = {
   name: 'pubsub'
   parent: app_environment
   properties: {
     componentType: 'pubsub.azure.eventhubs'
     version: 'v1'
-    secrets: [
-      {
-        name: 'evhconnectionstring'
-        value: evhConnectionString
-      }
-      {
-        name: 'storageaccountkey'
-        value: storageaccountkey
-      }
-    ]
+    secretStoreComponent: dapr_secret_store.name
+    secrets: []
     metadata: [
       {
         name: 'connectionString'
-        secretRef: 'evhconnectionstring'
+        secretRef: 'evh-connection-string'
       }
       {
         name: 'enableEntityManagement'
@@ -144,7 +165,7 @@ resource dapr_pub_sub 'Microsoft.App/managedEnvironments/daprComponents@2022-01-
       }
       {
         name: 'storageAccountKey'
-        secretRef: 'storageaccountkey'
+        secretRef: 'storage-account-key'
       }
     ]
     scopes: [

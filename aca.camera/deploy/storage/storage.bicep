@@ -1,14 +1,11 @@
 @description('Specifies the location for resources.')
 param location string = resourceGroup().location
-
-// @description('Specifies the VNET.')
-// param vnetId string
-
-// @description('Specifies the Subnet.')
-// param subnetName string
+@description('Key Vault Name')
+param keyVaultName string
+param storageName string
 
 resource storage 'Microsoft.Storage/storageAccounts@2021-08-01' = {
-  name: 'daprcfmstorage'
+  name: storageName
   location: location
   kind: 'StorageV2'
   sku: {
@@ -24,5 +21,16 @@ resource subscribers 'Microsoft.Storage/storageAccounts/blobServices/containers@
   properties: {}
 }
 
-output key string = storage.listKeys().keys[0].value
-output blobConnectionString string = 'DefaultEndpointsProtocol=https;AccountName=${storage.name};AccountKey=${listKeys(storage.id, storage.apiVersion).keys[0].value};EndpointSuffix=${environment().suffixes.storage}'
+resource keyVault 'Microsoft.KeyVault/vaults@2019-09-01' existing = {
+  name: keyVaultName
+}
+
+resource storage_ccount_key 'Microsoft.KeyVault/vaults/secrets@2019-09-01' = {
+  parent: keyVault
+  name: 'storage-account-key'
+  properties: {
+    value: storage.listKeys().keys[0].value
+  }
+}
+
+output name string = storage.name

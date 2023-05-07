@@ -2,7 +2,7 @@
 param location string = resourceGroup().location
 
 @description('Specifies the VNET.')
-param vnetId string
+param vnetName string
 
 @description('Specifies the Subnet.')
 param subnetName string
@@ -27,7 +27,7 @@ resource bastionHost 'Microsoft.Network/bastionHosts@2021-03-01' = {
         name: 'IpConf'
         properties: {
           subnet: {
-            id: '${vnetId}/subnets/${subnetName}'
+            id: resourceId('Microsoft.Network/virtualNetworks/subnets', vnetName, subnetName)
           }
           publicIPAddress: {
             id: publicIpAddressForBastion.id

@@ -1,5 +1,16 @@
 @description('Specifies the location for resources.')
 param location string = resourceGroup().location
+param mi_name string = 'mi-cae'
+param storage_name string = 'st${uniqueString(resourceGroup().id)}'
+param evh_name string = 'daprevh'
+
+module mi './mi/mi.bicep' = {
+  name: 'mi-module'
+  params: {
+    location: location
+    name: mi_name
+  }
+}
 
 module vnet './vnet/vnet.bicep' = {
   name: 'vnet-module'
@@ -8,11 +19,28 @@ module vnet './vnet/vnet.bicep' = {
   }
 }
 
+module kv './kv/kv.bicep' = {
+  name: 'kv-module'
+  params: {
+    location: location
+    mi_objectId: mi.outputs.object_id
+  }
+}
+
+module firewall './firewall/firewall.bicep' = {
+  name: 'firewall-module'
+  params: {
+    location: location
+    keyVaultName: kv.outputs.name
+    virtualNetworkName: vnet.outputs.name
+  }
+}
+
 module bastion './bastion/bastion.bicep' = {
   name: 'bastion-module'
   params: {
     location: location
-    vnetId: vnet.outputs.id
+    vnetName: vnet.outputs.name
     subnetName: 'AzureBastionSubnet'
   }
 }
@@ -21,7 +49,7 @@ module vm './vm/vm.bicep' = {
   name: 'vm-module'
   params: {
     location: location
-    vnetId: vnet.outputs.id
+    vnetName: vnet.outputs.name
     subnetName: 'jumpbox'
   }
 }
@@ -30,8 +58,8 @@ module storage './storage/storage.bicep' = {
   name: 'storage-module'
   params: {
     location: location
-    // vnetId: vnet.outputs.id
-    // subnetName: 'endpoints'
+    storageName: storage_name
+    keyVaultName: kv.outputs.name
   }
 }
 
@@ -39,6 +67,8 @@ module evh './evh/evh.bicep' = {
   name: 'evh-module'
   params: {
     location: location
+    evhName: evh_name
+    keyVaultName: kv.outputs.name
   }
 }
 
@@ -46,6 +76,7 @@ module cosmos './cosmosdb/cosmosdb.bicep' = {
   name: 'cosmosdb-module'
   params: {
     location: location
+    keyVaultName: kv.outputs.name
   }
 }
 
@@ -53,18 +84,26 @@ module aca_environment './aca/aca_environment.bicep' = {
   name: 'aca_environment-module'
   params: {
     location: location
+    keyVaultName: kv.outputs.name
+    mi_client_id: mi.outputs.client_id
+    vnetName: vnet.outputs.name
     vnetId: vnet.outputs.id
-    storageaccountkey: storage.outputs.key
-    evhConnectionString: evh.outputs.connectionString
+    accountName: storage.outputs.name
     cosmosDbName: cosmos.outputs.name
   }
+  dependsOn: [
+    firewall
+  ]
 }
 
-resource camera_control 'Microsoft.App/containerApps@2022-01-01-preview' = {
+resource camera_control 'Microsoft.App/containerApps@2022-11-01-preview' = {
   name: 'camera-control'
   location: location
   identity: {
-    type: 'None'
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', mi_name)}': {}
+    }
   }
   properties: {
     managedEnvironmentId: aca_environment.outputs.id
@@ -81,6 +120,7 @@ resource camera_control 'Microsoft.App/containerApps@2022-01-01-preview' = {
         appPort: 80
       }
     }
+    workloadProfileName: 'Consumption'
     template: {
       containers: [
         {
@@ -101,11 +141,14 @@ resource camera_control 'Microsoft.App/containerApps@2022-01-01-preview' = {
   }
 }
 
-resource notification 'Microsoft.App/containerApps@2022-01-01-preview' = {
+resource notification 'Microsoft.App/containerApps@2022-11-01-preview' = {
   name: 'notification-service'
   location: location
   identity: {
-    type: 'None'
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', mi_name)}': {}
+    }
   }
   properties: {
     managedEnvironmentId: aca_environment.outputs.id
@@ -122,12 +165,22 @@ resource notification 'Microsoft.App/containerApps@2022-01-01-preview' = {
         appPort: 80
       }
     }
+    workloadProfileName: 'Consumption'
     template: {
       containers: [
         {
           image: 'cmendibl3/aca-camera-notification'
           name: 'notification-service'
-          env: []
+          env: [
+            {
+              name: 'EventHub'
+              value: evh.outputs.evh_connection_string
+            }
+            {
+              name: 'AzureWebJobsStorage'
+              value: 'DefaultEndpointsProtocol=https;AccountName=${storage.outputs.name};AccountKey=${listKeys(resourceId('Microsoft.Storage/storageAccounts', storage_name), '2021-08-01').keys[0].value};EndpointSuffix=${environment().suffixes.storage}'
+            }
+          ]
           resources: {
             cpu: '0.5'
             memory: '1Gi'
@@ -135,18 +188,40 @@ resource notification 'Microsoft.App/containerApps@2022-01-01-preview' = {
         }
       ]
       scale: {
-        minReplicas: 1
-        maxReplicas: 1
+        minReplicas: 0
+        maxReplicas: 10
+        rules: [
+          {
+            name: 'evh-based-scaling'
+            custom: {
+              type: 'azure-eventhub'
+              metadata: {
+                connectionFromEnv: 'EventHub'
+                storageConnectionFromEnv: 'AzureWebJobsStorage'
+                consumerGroup: 'notification-service'
+                unprocessedEventThreshold: '2'
+                blobContainer: 'subscribers'
+                checkpointStrategy: 'dapr'
+              }
+            }
+          }
+        ]
       }
     }
   }
+  dependsOn: [
+    storage
+  ]
 }
 
-resource camera 'Microsoft.App/containerApps@2022-01-01-preview' = {
+resource camera 'Microsoft.App/containerApps@2022-11-01-preview' = {
   name: 'camera-service'
   location: location
   identity: {
-    type: 'None'
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', mi_name)}': {}
+    }
   }
   properties: {
     managedEnvironmentId: aca_environment.outputs.id
@@ -163,6 +238,7 @@ resource camera 'Microsoft.App/containerApps@2022-01-01-preview' = {
         appPort: 80
       }
     }
+    workloadProfileName: 'Consumption'
     template: {
       containers: [
         {
@@ -193,11 +269,14 @@ resource camera 'Microsoft.App/containerApps@2022-01-01-preview' = {
   }
 }
 
-resource camera_simulator 'Microsoft.App/containerApps@2022-01-01-preview' = {
+resource camera_simulator 'Microsoft.App/containerApps@2022-11-01-preview' = {
   name: 'camera-simulator'
   location: location
   identity: {
-    type: 'None'
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', mi_name)}': {}
+    }
   }
   properties: {
     managedEnvironmentId: aca_environment.outputs.id
@@ -208,6 +287,7 @@ resource camera_simulator 'Microsoft.App/containerApps@2022-01-01-preview' = {
         appId: 'camera-simulator'
       }
     }
+    workloadProfileName: 'Consumption'
     template: {
       containers: [
         {

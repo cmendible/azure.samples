@@ -2,7 +2,7 @@
 param location string = resourceGroup().location
 
 @description('Specifies the VNET.')
-param vnetId string
+param vnetName string
 
 @description('Specifies the Subnet.')
 param subnetName string
@@ -20,7 +20,7 @@ resource vm_nic 'Microsoft.Network/networkInterfaces@2020-08-01' = {
         properties: {
           privateIPAllocationMethod: 'Dynamic'
           subnet: {
-            id: '${vnetId}/subnets/${subnetName}'
+            id: resourceId('Microsoft.Network/virtualNetworks/subnets', vnetName, subnetName)
           }
           primary: true
           privateIPAddressVersion: 'IPv4'

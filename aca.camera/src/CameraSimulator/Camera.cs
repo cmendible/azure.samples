@@ -28,7 +28,7 @@ public class Camera
 
                 Task.Run(async () =>
                 {
-                    Console.WriteLine($"Motione detected on Camera: {cameraId}");
+                    Console.WriteLine($"Motion detected on Camera: {cameraId}");
                     var cameraMotionDetected = new CameraMotionDetected
                     {
                         CameraId = cameraId,
@@ -38,13 +38,13 @@ public class Camera
 
                     var halfDelay = TimeSpan.FromSeconds(rnd.Next(minHalfDelayInS, maxHalfDelayInS) + rnd.NextDouble());
                     Task.Delay(halfDelay).Wait();
-                    Console.WriteLine($"Motione detected on Camera: {cameraId}");
+                    Console.WriteLine($"Motion detected on Camera: {cameraId}");
                     cameraMotionDetected = cameraMotionDetected with { Timestamp = DateTime.Now };
                     await daprClient.PublishEventAsync("pubsub", "camera-control", cameraMotionDetected);
 
                     var finishDelay = TimeSpan.FromSeconds(rnd.Next(minHalfDelayInS, maxHalfDelayInS) + rnd.NextDouble());
                     Task.Delay(finishDelay).Wait();
-                    Console.WriteLine($"Motione detected on Camera: {cameraId}");
+                    Console.WriteLine($"Motion detected on Camera: {cameraId}");
                     cameraMotionDetected = cameraMotionDetected with { Timestamp = DateTime.Now };
                     await daprClient.PublishEventAsync("pubsub", "camera-control", cameraMotionDetected);
 

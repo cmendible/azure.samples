@@ -29,7 +29,8 @@ resource a_record 'Microsoft.Network/privateDnsZones/A@2020-06-01' = {
 
 // Link the Private DNS Zone with the VNET
 resource vnet_dns_link 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2018-09-01' = {
-  name: '${aca_dns.name}/private-network'
+  parent: aca_dns
+  name: 'private-network'
   location: 'global'
   properties: {
     registrationEnabled: false

@@ -1,5 +1,7 @@
 @description('Specifies the location for resources.')
 param location string = resourceGroup().location
+@description('Key Vault Name')
+param keyVaultName string
 
 resource cosmos 'Microsoft.DocumentDB/databaseAccounts@2021-01-15' = {
   name: 'dapr-aca-cosmosdb'
@@ -43,6 +45,18 @@ resource cosmos_containerName 'Microsoft.DocumentDB/databaseAccounts/sqlDatabase
         kind: 'Hash'
       }
     }
+  }
+}
+
+resource keyVault 'Microsoft.KeyVault/vaults@2019-09-01' existing = {
+  name: keyVaultName
+}
+
+resource cosmosdb_master_key 'Microsoft.KeyVault/vaults/secrets@2019-09-01' = {
+  parent: keyVault
+  name: 'cosmosdb-master-key'
+  properties: {
+    value: cosmos.listKeys().primaryMasterKey
   }
 }
 

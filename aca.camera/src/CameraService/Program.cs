@@ -1,14 +1,6 @@
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDaprClient();
-
-// Create Dapr Client
-var client = new DaprClientBuilder()
-    .Build();
-
 var app = builder.Build();
-
-app.UseCloudEvents();
 
 app.UseRouting();
 
