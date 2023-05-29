@@ -1,0 +1,28 @@
+{
+  "version": "2.0",
+  "logging": {
+    "applicationInsights": {
+      "samplingSettings": {
+        "isEnabled": true,
+        "excludedTypes": "Request"
+      }
+    },
+    "logLevel": {
+      "default": "Debug"
+    }
+  },
+  "extensionBundle": {
+    "id": "Microsoft.Azure.Functions.ExtensionBundle",
+    "version": "[3.*, 4.0.0)"
+  },
+  "customHandler": {
+    "description": {
+      "defaultExecutablePath": "quarkus-handler",
+      "workingDirectory": "",
+      "arguments": [
+        "-Dquarkus.http.port=${FUNCTIONS_CUSTOMHANDLER_PORT}"
+      ]
+    },
+    "enableForwardingHttpRequest": true
+  }
+}
