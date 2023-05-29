@@ -1,5 +1,5 @@
 ``` bash
-cd ./src/bin
+cd ./src/dni
 go build ./handlers.go
 func start --verbose
 ```
