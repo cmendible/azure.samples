@@ -5,3 +5,11 @@ az feature register --namespace "Microsoft.ContainerService" --name "EnableWorkl
 az feature show --namespace "Microsoft.ContainerService" --name "EnableWorkloadIdentityPreview"
 
 az provider register --namespace Microsoft.ContainerService
+
+---
+
+az login wihtout the sidecar:
+
+```bash 
+az login --federated-token "$(cat  $AZURE_FEDERATED_TOKEN_FILE)" --service-principal -u $AZURE_CLIENT_ID -t $AZURE_TENANT_ID
+```
