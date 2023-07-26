@@ -1,0 +1,20 @@
+{
+  "scriptFile": "__init__.py",
+  "bindings": [
+    {
+      "name": "msg",
+      "type": "serviceBusTrigger",
+      "direction": "in",
+      "topicName": "entry",
+      "subscriptionName": "receiver_one",
+      "connection": "AzureServiceBusConnectionString"
+    },
+    {
+      "type": "serviceBus",
+      "direction": "out",
+      "connection": "AzureServiceBusConnectionString",
+      "name": "queue",
+      "queueName": "backlog"
+    }
+  ]
+}

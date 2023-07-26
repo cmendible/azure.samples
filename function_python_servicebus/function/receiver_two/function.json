@@ -1,0 +1,13 @@
+{
+  "scriptFile": "__init__.py",
+  "bindings": [
+    {
+      "name": "msg",
+      "type": "serviceBusTrigger",
+      "direction": "in",
+      "topicName": "entry",
+      "subscriptionName": "receiver_two",
+      "connection": "AzureServiceBusConnectionString"
+    }
+  ]
+}
