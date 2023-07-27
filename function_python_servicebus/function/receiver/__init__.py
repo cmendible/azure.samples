@@ -1,8 +1,17 @@
 import json
 import logging
+import os
 import azure.functions as func
 
-def main(msg: func.ServiceBusMessage, queue: func.Out[str]) -> str:
+from azure.servicebus import ServiceBusClient, ServiceBusSender, ServiceBusMessage
+
+connstr = os.environ['AzureServiceBusConnectionString']
+queue_name = "backlog"
+
+serviceBusSender = None
+
+
+def main(msg: func.ServiceBusMessage) -> str:
     result = json.dumps({
         'message_id': msg.message_id,
         'body': msg.get_body().decode('utf-8'),
@@ -24,5 +33,15 @@ def main(msg: func.ServiceBusMessage, queue: func.Out[str]) -> str:
 
     logging.info(result)
 
-    # send message body to backlog queue
-    queue.set(msg.get_body().decode('utf-8'))
+    mesage = ServiceBusMessage("Single message")
+
+    # This is the way to go if you need to modify the message metadata before sending it.
+    getOrCreateServiceBusClientSender().send_messages(mesage)
+
+
+def getOrCreateServiceBusClientSender() -> ServiceBusSender:
+    global serviceBusSender
+    if serviceBusSender is None:
+        client = ServiceBusClient.from_connection_string(connstr)
+        serviceBusSender = client.get_queue_sender(queue_name)
+    return serviceBusSender

@@ -8,13 +8,6 @@
       "topicName": "entry",
       "subscriptionName": "receiver_one",
       "connection": "AzureServiceBusConnectionString"
-    },
-    {
-      "type": "serviceBus",
-      "direction": "out",
-      "connection": "AzureServiceBusConnectionString",
-      "name": "queue",
-      "queueName": "backlog"
     }
   ]
 }

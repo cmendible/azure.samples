@@ -26,9 +26,9 @@ These seetings are conigured in the `host.json` file:
 * The **maxConcurrentCalls** is set to 1 in the `host.json` file.
 * The **dynamicConcurrencyEnabled** is not set in the `host.json` file. So it's false by default.
 * Inside the Azure Function configuration:
-    * **FUNCTIONS_WORKER_PROCESS_COUNT** is set to 1
-    * **PYTHON_THREADPOOL_THREAD_COUNT** is set to None
-* Messages are sent to the Service Bus Queue using output bindings.
+    * **FUNCTIONS_WORKER_PROCESS_COUNT** is set to 1.
+    * **PYTHON_THREADPOOL_THREAD_COUNT** is set to None.
+* Messages are sent to the Service Bus Queue using a global Service Bus client or output bindings.
 
 ## More Information
 

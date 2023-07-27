@@ -109,8 +109,15 @@ resource "azurerm_servicebus_subscription" "receiver_three" {
 }
 
 resource "azurerm_servicebus_queue" "queue" {
-  name                = "backlog"
-  namespace_id        = azurerm_servicebus_namespace.ns.id
+  name         = "backlog"
+  namespace_id = azurerm_servicebus_namespace.ns.id
+  # enable_partitioning = true
+  # requires_session    = true
+}
+
+resource "azurerm_servicebus_queue" "queue_two" {
+  name         = "backlog_two"
+  namespace_id = azurerm_servicebus_namespace.ns.id
   # enable_partitioning = true
   # requires_session    = true
 }

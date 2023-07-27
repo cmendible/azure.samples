@@ -2,7 +2,7 @@ import json
 import logging
 import azure.functions as func
 
-def main(msg: func.ServiceBusMessage) -> str:
+def main(msg: func.ServiceBusMessage, queue: func.Out[str]) -> str:
     result = json.dumps({
         'message_id': msg.message_id,
         'body': msg.get_body().decode('utf-8'),
@@ -23,3 +23,6 @@ def main(msg: func.ServiceBusMessage) -> str:
     })
 
     logging.info(result)
+
+    # send message body to backlog queue
+    queue.set(msg.get_body().decode('utf-8'))
