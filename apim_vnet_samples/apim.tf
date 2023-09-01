@@ -5,13 +5,13 @@ resource "azurerm_api_management" "apim" {
   publisher_name       = var.publisher_name
   publisher_email      = var.publisher_email
   sku_name             = "Developer_1"
-  virtual_network_type = "Internal"
+  virtual_network_type = "External" # Use "Internal" for a fully private APIM
 
   virtual_network_configuration {
     subnet_id = azurerm_subnet.apim.id
   }
 
-   depends_on = [
+  depends_on = [
     azurerm_subnet_network_security_group_association.nsg_association
   ]
 }
