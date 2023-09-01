@@ -46,6 +46,10 @@ az apim deletedservice purge --location <location> --service-name <apim name>
 az ad sp create-for-rbac --name <sp name> --role contributor --scopes /subscriptions/<subscription id> --sdk-auth
 ```
 
+``` shell
+az ad sp create-for-rbac --name <sp name> --role contributor --scopes /subscriptions/<subscription id>/resourceGroups/<resource-group> --sdk-auth
+```
+
 ## Github Secrets
 
 Create the a secret with json value resulting from the previous step:

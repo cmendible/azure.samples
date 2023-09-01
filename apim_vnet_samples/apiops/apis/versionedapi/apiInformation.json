@@ -1,0 +1,19 @@
+{
+    "properties": {
+      "apiRevision": "1",
+      "apiVersionSetId": "/subscriptions/[subscription id]/resourceGroups/apim/providers/Microsoft.ApiManagement/service/apim-231418/apiVersionSets/6286439d9a310d01468c083c",
+      "authenticationSettings": {},
+      "description": "",
+      "displayName": "versionedapi",
+      "isCurrent": true,
+      "path": "versionedapi",
+      "protocols": [
+        "https"
+      ],
+      "subscriptionKeyParameterNames": {
+        "header": "Ocp-Apim-Subscription-Key",
+        "query": "subscription-key"
+      },
+      "subscriptionRequired": true
+    }
+  }

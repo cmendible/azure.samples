@@ -1,0 +1,10 @@
+<policies>
+    <inbound>
+        <send-request mode="new" response-variable-name="ip" timeout="20">
+            <set-url>http://ifconfig.io/all.json</set-url>
+            <set-method>GET</set-method>
+        </send-request>
+        <return-response response-variable-name="ip" />
+        <base />
+    </inbound>
+</policies>

@@ -1,0 +1,19 @@
+{
+  "properties": {
+    "apiRevision": "1",
+    "apiVersionSetId": "",
+    "authenticationSettings": {},
+    "description": "",
+    "displayName": "mendibledotcom",
+    "isCurrent": true,
+    "path": "mendibledotcom",
+    "protocols": [
+      "https"
+    ],
+    "subscriptionKeyParameterNames": {
+      "header": "Ocp-Apim-Subscription-Key",
+      "query": "subscription-key"
+    },
+    "subscriptionRequired": true
+  }
+}
