@@ -1,0 +1,12 @@
+---
+# Block all outbound traffic unless a Service Entry is specified
+# Configurations to the addon MeshConfig are currently not possible with the add-on due to reconciliation of the Istio ConfigMap, but we are working on adding a MeshConfig implementation approach, which will be available soon.
+# For the time being, users can set the outbound traffic policy mode via the Sidecar CR: https://istio.io/latest/docs/reference/config/networking/sidecar/#OutboundTrafficPolicy. If using the add-on, I believe this will need to be deployed in the aks-istio-system namespace to take place across the mesh. It can also be deployed per-namespace or per-workload using the workloadSelector field.
+apiVersion: networking.istio.io/v1beta1
+kind: Sidecar
+metadata:
+  name: registry-only
+  namespace: aks-istio-system
+spec:
+  outboundTrafficPolicy:
+    mode: REGISTRY_ONLY

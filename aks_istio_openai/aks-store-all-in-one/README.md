@@ -1,0 +1,1 @@
+while true; do curl http://ai-service:5001/generate/version; sleep 1; done;

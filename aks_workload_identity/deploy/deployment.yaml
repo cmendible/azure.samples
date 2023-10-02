@@ -23,13 +23,13 @@ spec:
           ports:
             - containerPort: 80
           command:
-             - sh
-             - -c
-             - sleep 1d
+            - sh
+            - -c
+            - sleep 1d
   selector:
     matchLabels:
       app: az-cli
-      
+
 ---
 apiVersion: v1
 kind: Pod
@@ -44,9 +44,9 @@ spec:
     - image: ghcr.io/azure/azure-workload-identity/msal-go
       name: oidc
       env:
-      - name: KEYVAULT_URL
-        value: https://kv-aks-cfm.vault.azure.net/
-      - name: SECRET_NAME
-        value: super-secret
+        - name: KEYVAULT_URL
+          value: https://kv-aks-cfm.vault.azure.net/
+        - name: SECRET_NAME
+          value: super-secret
   nodeSelector:
     kubernetes.io/os: linux

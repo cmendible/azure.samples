@@ -1,0 +1,37 @@
+---
+# Add login.microsoftonline.com to Istio Service Registry
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: openai-se
+spec:
+  hosts:
+    - login.microsoftonline.com
+    - <service name>.search.windows.net
+    - <service name>.openai.azure.com
+  ports:
+    - number: 443
+      name: https
+      protocol: HTTPS
+  resolution: DNS
+  location: MESH_EXTERNAL
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: storage-se
+spec:
+  hosts:
+    - <storage name>.blob.core.windows.net
+    - openaipublic.blob.core.windows.net
+  ports:
+    - number: 443
+      name: https
+      protocol: TLS
+    - number: 443
+      name: tcp
+      protocol: TCP
+  resolution: DNS
+  location: MESH_EXTERNAL
+

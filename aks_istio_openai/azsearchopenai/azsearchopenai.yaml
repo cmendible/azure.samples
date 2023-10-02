@@ -1,0 +1,102 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: azseachopenai
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: azseachopenai
+  template:
+    metadata:
+      labels:
+        app: azseachopenai
+        azure.workload.identity/use: "true"
+    spec:
+      serviceAccountName: workload-identity-aoai-account
+      nodeSelector:
+        "kubernetes.io/os": linux
+      containers:
+        - name: azseachopenai
+          image: cmendibl3/azseachopenai
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 50505
+          env:
+            - name: AZURE_STORAGE_ACCOUNT
+              value: "openaicfm"
+            - name: AZURE_STORAGE_CONTAINER
+              value: "content"
+            - name: AZURE_SEARCH_SERVICE
+              value: "cfm-search"
+            - name: AZURE_SEARCH_INDEX
+              value: "gptkbindex"
+            - name: AZURE_OPENAI_CHATGPT_MODEL
+              value: "gpt-35-turbo"
+            - name: AZURE_OPENAI_CHATGPT_DEPLOYMENT
+              value: "gpt-35-turbo"
+            - name: AZURE_OPENAI_EMB_MODEL_NAME
+              value: "text-embedding-ada-002"
+            - name: AZURE_OPENAI_EMB_DEPLOYMENT
+              value: "text-embedding-ada-002"
+            - name: AZURE_OPENAI_SERVICE
+              value: "openai-cfm-2"
+            - name: APP_LOG_LEVEL
+              value: "DEBUG"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: azseachopenai
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 80
+      targetPort: 50505
+  selector:
+    app: azseachopenai
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: azseachopenai
+spec:
+  selector:
+    istio: aks-istio-ingressgateway-external
+  servers:
+    - port:
+        number: 80
+        name: http
+        protocol: HTTP
+      hosts:
+        - "*"
+      tls:
+        httpsRedirect: true
+    - port:
+        number: 443
+        name: https
+        protocol: HTTPS
+      hosts:
+        - "*"
+      tls:
+        mode: SIMPLE
+        
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: azseachopenai
+spec:
+  hosts:
+    - "*"
+  gateways:
+    - azseachopenai
+  http:
+    - route:
+        - destination:
+            host: azseachopenai
+            port:
+              number: 80
