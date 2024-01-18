@@ -17,15 +17,14 @@ rm -rf ./bin
 sudo mv kubelogin /usr/local/bin/kubelogin
 ```
 
-```bash
-az aks get-credentials --resource-group aks-no-local-accounts --name aksnolocalaccounts
-kubectl get po
-```
 ## Install
 
 ``` shell
 terraform init
 terraform apply -auto-approve
+```
 
-
+```bash
+az aks get-credentials --resource-group aks-no-local-accounts --name aksnolocalaccounts
+kubectl get po
 ```

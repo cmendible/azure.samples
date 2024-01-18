@@ -1,9 +1,17 @@
+data "azurerm_client_config" "current" {}
+
 resource "azuread_application" "sp" {
   display_name = var.sp_name
+  owners = [
+    data.azurerm_client_config.current.object_id
+  ]
 }
 
 resource "azuread_service_principal" "sp" {
   application_id = azuread_application.sp.application_id
+  owners = [
+    data.azurerm_client_config.current.object_id
+  ]
 }
 
 # Create kubecost's Service principal password
