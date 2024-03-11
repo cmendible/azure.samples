@@ -1,70 +1,49 @@
-resource "azapi_resource" "ca_webapi" {
-  name      = var.ca_name
-  location  = var.location
-  parent_id = var.resource_group_id
-  type      = "Microsoft.App/containerApps@2022-11-01-preview"
-  identity {
-    type = "UserAssigned"
-    identity_ids = [
-      var.managed_identity_id
-    ]
-  }
-
+resource "azapi_resource" "ca_function" {
+  schema_validation_enabled = false
+  name                      = "func-${var.ca_name}"
+  location                  = var.location
+  parent_id                 = var.resource_group_id
+  type                      = "Microsoft.Web/sites@2023-01-01"
   body = jsonencode({
+    kind = "functionapp,linux,container,azurecontainerapps"
     properties : {
+      language             = "dotnet-isolated"
       managedEnvironmentId = "${var.cae_id}"
-      configuration = {
-        secrets = []
-        ingress = {
-          external   = true
-          targetPort = 80
-          transport  = "Http"
-
-          traffic = [
-            {
-              latestRevision = true
-              weight         = 100
-            }
-          ]
-          corsPolicy = {
-            allowedOrigins = [
-              "*"
-            ]
-            allowedHeaders   = ["*"]
-            allowCredentials = false
-          }
-        }
-        dapr = {
-          enabled = false
-        }
-      }
-      template = {
-        containers = [
+      siteConfig = {
+        linuxFxVersion = "DOCKER|cmendibl3/aca-functions:0.2.0"
+        appSettings = [
           {
-            name  = "welcome-function"
-            image = "cmendibl3/aca-functions:0.2.0"
-            resources = {
-              cpu    = 0.5
-              memory = "1Gi"
-            }
-            env = [
-              {
-                name  = "FUNCTIONS_WORKER_RUNTIME"
-                value = "dotnet-isolated"
-              },
-              {
-                name  = "FUNCTIONS_EXTENSION_VERSION"
-                value = "~4"
-              }
-            ],
+            name  = "AzureWebJobsStorage"
+            value = var.storage_connection_string
           },
+          {
+            name  = "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING"
+            value = var.storage_connection_string
+          },
+          {
+            name  = "APPINSIGHTS_INSTRUMENTATIONKEY"
+            value = var.appi_instrumentation_key
+          },
+          {
+            name  = "APPLICATIONINSIGHTS_CONNECTION_STRING"
+            value = "InstrumentationKey=${var.appi_instrumentation_key}"
+          },
+          {
+            name  = "FUNCTIONS_WORKER_RUNTIME"
+            value = "dotnet-isolated"
+          },
+          {
+            name  = "FUNCTIONS_EXTENSION_VERSION"
+            value = "~4"
+          }
         ]
-        scale = {
-          minReplicas = 1
-          maxReplicas = 1
-        }
       }
+      workloadProfileName = "Consumption"
+      resourceConfig = {
+        cpu    = 1
+        memory = "2Gi"
+      }
+      httpsOnly = true
     }
   })
-  response_export_values = ["properties.configuration.ingress.fqdn"]
 }

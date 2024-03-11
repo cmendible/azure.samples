@@ -7,5 +7,5 @@ variable "managed_identity_id" {}
 variable "managed_identity_client_id" {}
 variable "tenant_id" {}
 
-variable "storage_account_name" {}
-variable "storage_container_name" {}
+variable "storage_connection_string" {}
+variable "appi_instrumentation_key" {}

@@ -76,8 +76,8 @@ module "ca_webapi" {
   cae_id                     = module.cae.cae_id
   cae_default_domain         = module.cae.defaultDomain
   managed_identity_id        = module.mi.mi_id
-  storage_account_name       = module.st.storage_account_name
-  storage_container_name     = module.st.storage_container_name
+  storage_connection_string  = module.st.connection_string
+  appi_instrumentation_key   = module.appi.appi_key
   tenant_id                  = data.azurerm_subscription.current.tenant_id
   managed_identity_client_id = module.mi.client_id
 }
