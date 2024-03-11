@@ -17,7 +17,7 @@ resource "azapi_resource" "ca_webapi" {
         secrets = []
         ingress = {
           external   = true
-          targetPort = 8080
+          targetPort = 80
           transport  = "Http"
 
           traffic = [
@@ -41,13 +41,22 @@ resource "azapi_resource" "ca_webapi" {
       template = {
         containers = [
           {
-            name  = "chat-copilot-webapi"
-            image = "cmendibl3/aca-functions"
+            name  = "welcome-function"
+            image = "cmendibl3/aca-functions:0.2.0"
             resources = {
               cpu    = 0.5
               memory = "1Gi"
             }
-            env = [],
+            env = [
+              {
+                name  = "FUNCTIONS_WORKER_RUNTIME"
+                value = "dotnet-isolated"
+              },
+              {
+                name  = "FUNCTIONS_EXTENSION_VERSION"
+                value = "~4"
+              }
+            ],
           },
         ]
         scale = {
