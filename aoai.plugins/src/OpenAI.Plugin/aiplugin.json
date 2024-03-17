@@ -1,0 +1,17 @@
+{
+    "schemaVersion": "v1",
+    "nameForHuman": "Greet Plugin",
+    "nameForModel": "GreetPlugin",
+    "descriptionForModel": "Used to greet a a person given it's name and age.",
+    "descriptionForHuman": "Used to greet a a person given it's name and age.",
+    "auth": {
+        "type": "none"
+    },
+    "api": {
+        "type": "openapi",
+        "url": "{url}/swagger.json"
+    },
+    "logoUrl": "{url}/logo.png",
+    "contactEmail": "support@example.com",
+    "legalInfoUrl": "http://www.example.com/legal"
+}
