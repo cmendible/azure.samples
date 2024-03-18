@@ -10,6 +10,7 @@ global using System.Text.Json.Serialization;
 global using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 global using Microsoft.Extensions.Configuration;
 global using System.Net;
+global using System.Reflection;
 global using Microsoft.Azure.Functions.Worker;
 global using Microsoft.Azure.Functions.Worker.Http;
 global using Models;

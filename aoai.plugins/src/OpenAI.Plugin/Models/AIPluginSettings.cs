@@ -68,7 +68,7 @@ public class AIPluginSettings
         }
 
         var configuration = new ConfigurationBuilder()
-            .SetBasePath(System.IO.Directory.GetCurrentDirectory())
+            .SetBasePath(new FileInfo(Assembly.GetExecutingAssembly().Location).Directory.FullName)
             .AddJsonFile(configFile, optional: false, reloadOnChange: true)
             .Build();
 
