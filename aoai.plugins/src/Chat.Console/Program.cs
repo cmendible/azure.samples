@@ -10,43 +10,11 @@ var memoryEndpoint = configuration["Memory:Endpoint"]!;
 var weatherEndpoint = configuration["Plugins:WeatherEndpoint"]!;
 var greetEndpoint = configuration["Plugins:GreetEndpoint"]!;
 
-var azureOpenAITextConfig = new AzureOpenAIConfig()
-{
-    Auth = AzureOpenAIConfig.AuthTypes.APIKey,
-    Endpoint = endpoint,
-    APIKey = apiKey,
-    APIType = AzureOpenAIConfig.APITypes.ChatCompletion,
-    Deployment = modelId,
-    MaxTokenTotal = 8191,
-    MaxRetries = 10,
-};
+// Serveles Mewmory Sample
+// UserServerlesKernelMemory(endpoint, apiKey, modelId, embedding_deployment);
 
-var azureOpenAITextEmbeddingConfig = new AzureOpenAIConfig()
-{
-    Auth = AzureOpenAIConfig.AuthTypes.APIKey,
-    Endpoint = endpoint,
-    APIKey = apiKey,
-    APIType = AzureOpenAIConfig.APITypes.EmbeddingGeneration,
-    Deployment = embedding_deployment,
-    MaxTokenTotal = 8191,
-    MaxRetries = 10,
-};
-
-// var memory = new KernelMemoryBuilder()
-//     .wi
-//     .AddIngestionEmbeddingGenerator
-
-//     .WithAzureOpenAITextGeneration(azureOpenAITextConfig, new DefaultGPTTokenizer())
-//     .WithAzureOpenAITextEmbeddingGeneration(azureOpenAITextEmbeddingConfig, new DefaultGPTTokenizer())
-//     .Build<MemoryServerless>();
-
-// var memory = new MemoryWebClient(memoryEndpoint);
-// var r = memory.ImportDocumentAsync("./assets/agendabuild.png").Result;
-// r = memory.ImportDocumentAsync("./assets/BOE-S-2024-61.pdf").Result;
-// await memory.ImportTextAsync("Carlos Mendible is a Sr Cloud Solution Architect at Microsoft. He is a great team player and has a lot of experience in the cloud", tags: new() { { "user", "Carlos" } });
-
-// var answer1 = memory.AskAsync("Tell me about Carlos").Result;
-// Console.WriteLine(answer1.Result);
+// Kernel Memory Service Sample
+// UseKernelMemoryService(memoryEndpoint);
 
 var builder = Kernel.CreateBuilder();
 builder.Services.AddLogging(c => c.SetMinimumLevel(LogLevel.Trace).AddDebug());
@@ -55,12 +23,14 @@ builder.Plugins.AddFromType<AuthorEmailPlanner>();
 builder.Plugins.AddFromType<EmailPlugin>();
 Kernel kernel = builder.Build();
 
-#pragma warning disable SKEXP0042 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-await kernel.ImportPluginFromOpenAIAsync("WeatherForecastPlugin", new Uri(weatherEndpoint)).ConfigureAwait(false);
-await kernel.ImportPluginFromOpenAIAsync("GreetPlugin", new Uri(greetEndpoint)).ConfigureAwait(false);
-#pragma warning restore SKEXP0042 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-
+// Import the memory plugin using the Kernel Memory Service.
 kernel.ImportPluginFromObject(new MemoryPlugin(new Uri(memoryEndpoint)));
+
+#pragma warning disable SKEXP0042 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+// Import Wetaher and Greet plugins form endpoints
+// await kernel.ImportPluginFromOpenAIAsync("WeatherForecastPlugin", new Uri(weatherEndpoint)).ConfigureAwait(false);
+// await kernel.ImportPluginFromOpenAIAsync("GreetPlugin", new Uri(greetEndpoint)).ConfigureAwait(false);
+#pragma warning restore SKEXP0042 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 
 // Retrieve the chat completion service from the kernel
 IChatCompletionService chatCompletionService = kernel.GetRequiredService<IChatCompletionService>();
@@ -104,4 +74,51 @@ while (true)
 
     // Add the message from the agent to the chat history
     chatMessages.AddAssistantMessage(fullMessage);
+}
+
+void UserServerlesKernelMemory(string endpoint, string apiKey, string modelId, string embedding_deployment)
+{
+    var azureOpenAITextConfig = new AzureOpenAIConfig()
+    {
+        Auth = AzureOpenAIConfig.AuthTypes.APIKey,
+        Endpoint = endpoint,
+        APIKey = apiKey,
+        APIType = AzureOpenAIConfig.APITypes.ChatCompletion,
+        Deployment = modelId,
+        MaxTokenTotal = 8191,
+        MaxRetries = 10,
+    };
+
+    var azureOpenAITextEmbeddingConfig = new AzureOpenAIConfig()
+    {
+        Auth = AzureOpenAIConfig.AuthTypes.APIKey,
+        Endpoint = endpoint,
+        APIKey = apiKey,
+        APIType = AzureOpenAIConfig.APITypes.EmbeddingGeneration,
+        Deployment = embedding_deployment,
+        MaxTokenTotal = 8191,
+        MaxRetries = 10,
+    };
+
+    var memory = new KernelMemoryBuilder()
+        .WithAzureOpenAITextGeneration(azureOpenAITextConfig)
+        .WithAzureOpenAITextEmbeddingGeneration(azureOpenAITextEmbeddingConfig)
+        .Build<MemoryServerless>();
+
+    memory.ImportTextAsync(
+        "Carlos Mendible is a Sr Cloud Solution Architect at Microsoft. He is a great team player and has a lot of experience in the cloud",
+        tags: new() { { "user", "Carlos" } }).Wait();
+
+    var answer1 = memory.AskAsync("Tell me about Carlos").Result;
+    Console.WriteLine(answer1.Result);
+}
+
+void UseKernelMemoryService(string memoryEndpoint)
+{
+    var memory = new MemoryWebClient(memoryEndpoint);
+    memory.ImportDocumentAsync("./assets/agendabuild.png").Wait();
+    memory.ImportDocumentAsync("./assets/BOE-S-2024-61.pdf").Wait();
+
+    var answer1 = memory.AskAsync("Que session del Build viene despues de la de Carlos y David?").Result;
+    Console.WriteLine(answer1.Result);
 }

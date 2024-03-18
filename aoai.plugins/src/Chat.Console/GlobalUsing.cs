@@ -7,3 +7,4 @@ global using Microsoft.Extensions.Logging;
 global using Microsoft.KernelMemory;
 global using Microsoft.SemanticKernel.Plugins.OpenApi;
 global using Microsoft.Extensions.Configuration;
+global using Microsoft.KernelMemory.AI.OpenAI;
