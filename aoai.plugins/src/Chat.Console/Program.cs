@@ -24,7 +24,7 @@ builder.Plugins.AddFromType<EmailPlugin>();
 Kernel kernel = builder.Build();
 
 // Import the memory plugin using the Kernel Memory Service.
-kernel.ImportPluginFromObject(new MemoryPlugin(new Uri(memoryEndpoint)));
+// kernel.ImportPluginFromObject(new MemoryPlugin(new Uri(memoryEndpoint)));
 
 #pragma warning disable SKEXP0042 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 // Import Wetaher and Greet plugins form endpoints

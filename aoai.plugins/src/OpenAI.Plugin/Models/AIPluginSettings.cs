@@ -62,11 +62,6 @@ public class AIPluginSettings
 
     public static AIPluginSettings FromFile(string configFile = DefaultConfigFile)
     {
-        if (!File.Exists(configFile))
-        {
-            throw new FileNotFoundException($"Configuration not found: {configFile}");
-        }
-
         var configuration = new ConfigurationBuilder()
             .SetBasePath(new FileInfo(Assembly.GetExecutingAssembly().Location).Directory.FullName)
             .AddJsonFile(configFile, optional: false, reloadOnChange: true)

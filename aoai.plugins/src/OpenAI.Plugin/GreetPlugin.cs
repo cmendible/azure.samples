@@ -29,7 +29,7 @@ namespace OpenAI.Plugin
         [OpenApiResponseWithBody(statusCode: HttpStatusCode.BadRequest, contentType: "application/json", bodyType: typeof(ErrorResponse), Description = "Returned if the request body is invalid.")]
         [OpenApiResponseWithBody(statusCode: HttpStatusCode.NotFound, contentType: "application/json", bodyType: typeof(ErrorResponse), Description = "Returned if the semantic function could not be found.")]
         public async Task<HttpResponseData> Run(
-            [HttpTrigger(AuthorizationLevel.Function, "get", Route = "plugins/greet/{name}/{age:int:min(1)}")] HttpRequestData req,
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "plugins/greet/{name}/{age:int:min(1)}")] HttpRequestData req,
             FunctionContext executionContext,
             string name,
             string age)

@@ -29,7 +29,7 @@
     </None>
     <None Update="aiplugin.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </None>
     <AdditionalFiles Include="Prompts\**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
