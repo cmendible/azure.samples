@@ -1,0 +1,26 @@
+apiVersion: projectcalico.org/v3
+kind: IPPool
+metadata:
+  name: team-a-ipv4-ippool
+spec:
+  cidr: 192.168.1.0/24
+  ipipMode: Never
+  natOutgoing: true
+  nodeSelector: all()
+  vxlanMode: Always
+  allowedUses:
+    - Workload
+
+---
+apiVersion: projectcalico.org/v3
+kind: IPPool
+metadata:
+  name: team-b-ipv4-ippool
+spec:
+  cidr: 192.168.2.0/24
+  ipipMode: Never
+  natOutgoing: false
+  nodeSelector: all()
+  vxlanMode: Always
+  allowedUses:
+    - Workload
