@@ -1,0 +1,14 @@
+apiVersion: v2
+name: kube-egress-gateway
+description: A Helm chart for installing Azure kube-egress-gateway components
+type: application
+maintainers:
+- email: jwtty0919@gmail.com
+  name: Wantong Jiang
+- email: fanshangxiang@gmail.com
+  name: Shangxiang Fan
+- email: mali_no2@hotmail.com
+  name: Li Ma
+sources:
+- https://github.com/Azure/kube-egress-gateway
+version: 0.1.2

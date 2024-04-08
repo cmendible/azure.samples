@@ -1,0 +1,166 @@
+{{- if .Values.gatewayCNIManager.enabled }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kube-egress-gateway-cni-manager
+  namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kube-egress-gateway-cni-manager-role
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - egressgateway.kubernetes.azure.com
+  resources:
+  - podendpoints
+  verbs:
+  - create
+  - delete
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - egressgateway.kubernetes.azure.com
+  resources:
+  - staticgatewayconfigurations
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - egressgateway.kubernetes.azure.com
+  resources:
+  - staticgatewayconfigurations/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kube-egress-gateway-cni-manager-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kube-egress-gateway-cni-manager-role
+subjects:
+- kind: ServiceAccount
+  name: kube-egress-gateway-cni-manager
+  namespace: {{ .Release.Namespace }}
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    kube-egress-gateway-control-plane: cni-manager
+  name: kube-egress-gateway-cni-manager
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      kube-egress-gateway-control-plane: cni-manager
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: cni-manager
+      labels:
+        kube-egress-gateway-control-plane: cni-manager
+    spec:
+      containers:
+      - args:
+        - serve
+        - --grpc-server-port={{- .Values.gatewayCNIManager.grpcServerPort }}
+        - --exception-cidrs={{- range $i, $cidr := .Values.gatewayCNIManager.exceptionCidrs }}{{- if $i }},{{- end }}{{ $cidr }}{{- end }}
+        - --cni-conf-file={{- .Values.gatewayCNIManager.cniConfigFileName }}
+        - --cni-uninstall-configmap-name={{- .Values.gatewayCNIManager.cniUninstallConfigMapName }}
+        command:
+        - /kube-egress-gateway-cnimanager
+        image: {{ template "image.gatewayCNIManager" . }}
+        imagePullPolicy: {{ .Values.gatewayCNIManager.imagePullPolicy }}
+        ports:
+          - containerPort: {{ .Values.gatewayCNIManager.grpcServerPort }}
+            name: grpc
+        livenessProbe:
+          grpc:
+            port: {{ .Values.gatewayCNIManager.grpcServerPort }}
+          initialDelaySeconds: 20
+          periodSeconds: 5
+        name: cnimanager
+        readinessProbe:
+          grpc:
+            port: {{ .Values.gatewayCNIManager.grpcServerPort }}
+          initialDelaySeconds: 20
+          periodSeconds: 5
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        env:
+        - name: MY_POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        volumeMounts:
+        - mountPath: /etc/cni/net.d
+          name: cni-conf
+      initContainers:
+      - image: {{ template "image.gatewayCNI" . }}
+        imagePullPolicy: {{ .Values.gatewayCNI.imagePullPolicy }}
+        name: cni-install
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - mountPath: /opt/cni/bin
+          name: cni-bin
+      - image: {{ template "image.gatewayCNIIpam" . }}
+        imagePullPolicy: {{ .Values.gatewayCNIIpam.imagePullPolicy }}
+        name: cni-ipam-install
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - mountPath: /opt/cni/bin
+          name: cni-bin
+      hostNetwork: true
+      nodeSelector:
+        kubernetes.io/os: linux
+      serviceAccountName: kube-egress-gateway-cni-manager
+      terminationGracePeriodSeconds: 60 # update to 60 seconds for cni uninstall retry on error
+      volumes:
+      - hostPath:
+          path: /opt/cni/bin/
+        name: cni-bin
+      - hostPath:
+          path: /etc/cni/net.d/
+        name: cni-conf
+{{- end }}

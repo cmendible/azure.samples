@@ -1,0 +1,56 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: team-a
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: busybox-deployment-default
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: busybox
+  template:
+    metadata:
+      labels:
+        app: busybox
+      annotations:
+        kubernetes.azure.com/static-gateway-configuration: static-egress-gateway-default
+    spec:
+      containers:
+        - name: busybox
+          image: busybox
+          command: ["sleep", "3600"]
+          resources:
+            limits:
+              cpu: "0.02"
+              memory: "256Mi"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: busybox-deployment-team-a
+  namespace: team-a
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: busybox
+  template:
+    metadata:
+      labels:
+        app: busybox
+    spec:
+      containers:
+        - name: busybox
+          image: busybox
+          command: ["sleep", "3600"]
+          resources:
+            limits:
+              cpu: "0.02"
+              memory: "256Mi"
