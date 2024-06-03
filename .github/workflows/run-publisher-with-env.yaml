@@ -17,7 +17,7 @@ on:
         type: string
 
 env:
-  apiops_release_version: v4.9.1
+  apiops_release_version: v5.1.4
   #By default, this will be Information but if you want something different you will need to add a variable in the Settings -> Environment -> Environment variables section
   Logging__LogLevel__Default: ${{ vars.LOG_LEVEL }}
 
@@ -30,7 +30,7 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 2
-
+    
       # Run Spectral
       - uses: actions/setup-node@v3
         with:
@@ -69,9 +69,21 @@ jobs:
           $InformationPreference = "Continue"
 
           Write-Information "Downloading publisher..."
-          $publisherFileName = "${{ runner.os }}" -like "*win*" ? "publisher.win-x64.exe" : "publisher.linux-x64.exe"
+          $publisherFileName = "publisher.linux-x64"
+          $publisherFinalFileName = "publisher"
+          if ("${{ runner.os }}" -like "*win*") {
+            $publisherFileName = "publisher.win-x64.exe"
+            $publisherFinalFileName = "publisher.exe"
+          }
+          elseif ("${{ runner.os }}" -like "*mac*" -and "${{ runner.arch }}" -like "*arm*") {
+            $publisherFileName = "publisher.osx-arm64"
+          }
+          elseif ("${{ runner.os }}" -like "*mac*" -and "${{ runner.arch }}" -like "*x86_64*") {
+            $publisherFileName = "publisher.osx-x64"
+          }
+          
           $uri = "https://github.com/Azure/apiops/releases/download/${{ env.apiops_release_version }}/$publisherFileName"
-          $destinationFilePath = Join-Path "${{ runner.temp }}" "publisher.exe"
+          $destinationFilePath = Join-Path "${{ runner.temp }}" $publisherFinalFileName
           Invoke-WebRequest -Uri "$uri" -OutFile "$destinationFilePath"
 
           if ("${{ runner.os }}" -like "*linux*")
@@ -104,9 +116,21 @@ jobs:
           $InformationPreference = "Continue"
 
           Write-Information "Downloading publisher..."
-          $publisherFileName = "${{ runner.os }}" -like "*win*" ? "publisher.win-x64.exe" : "publisher.linux-x64.exe"
+          $publisherFileName = "publisher.linux-x64"
+          $publisherFinalFileName = "publisher"
+          if("${{ runner.os }}" -like "*win*"){
+            $publisherFileName = "publisher.win-x64.exe"
+            $publisherFinalFileName = "publisher.exe"
+          }
+          elseif("${{ runner.os }}" -like "*mac*" -and "${{ runner.arch }}" -like "*arm*"){
+            $publisherFileName = "publisher.osx-arm64"
+          }
+          elseif ("${{ runner.os }}" -like "*mac*" -and "${{ runner.arch }}" -like "*x86_64*") {
+            $publisherFileName = "publisher.osx-x64"
+          }
+          
           $uri = "https://github.com/Azure/apiops/releases/download/${{ env.apiops_release_version }}/$publisherFileName"
-          $destinationFilePath = Join-Path "${{ runner.temp }}" "publisher.exe"
+          $destinationFilePath = Join-Path "${{ runner.temp }}" $publisherFinalFileName
           Invoke-WebRequest -Uri "$uri" -OutFile "$destinationFilePath"
 
           if ("${{ runner.os }}" -like "*linux*")
@@ -141,9 +165,21 @@ jobs:
           $InformationPreference = "Continue"
 
           Write-Information "Downloading publisher..."
-          $publisherFileName = "${{ runner.os }}" -like "*win*" ? "publisher.win-x64.exe" : "publisher.linux-x64.exe"
+          $publisherFileName = "publisher.linux-x64"
+          $publisherFinalFileName = "publisher"
+          if("${{ runner.os }}" -like "*win*"){
+            $publisherFileName = "publisher.win-x64.exe"
+            $publisherFinalFileName = "publisher.exe"
+          }
+          elseif("${{ runner.os }}" -like "*mac*" -and "${{ runner.arch }}" -like "*arm*"){
+            $publisherFileName = "publisher.osx-arm64"
+          }
+          elseif ("${{ runner.os }}" -like "*mac*" -and "${{ runner.arch }}" -like "*x86_64*") {
+            $publisherFileName = "publisher.osx-x64"
+          }
+          
           $uri = "https://github.com/Azure/apiops/releases/download/${{ env.apiops_release_version }}/$publisherFileName"
-          $destinationFilePath = Join-Path "${{ runner.temp }}" "publisher.exe"
+          $destinationFilePath = Join-Path "${{ runner.temp }}" $publisherFinalFileName
           Invoke-WebRequest -Uri "$uri" -OutFile "$destinationFilePath"
 
           if ("${{ runner.os }}" -like "*linux*")
@@ -177,9 +213,21 @@ jobs:
           $InformationPreference = "Continue"
 
           Write-Information "Downloading publisher..."
-          $publisherFileName = "${{ runner.os }}" -like "*win*" ? "publisher.win-x64.exe" : "publisher.linux-x64.exe"
+          $publisherFileName = "publisher.linux-x64"
+          $publisherFinalFileName = "publisher"
+          if("${{ runner.os }}" -like "*win*"){
+            $publisherFileName = "publisher.win-x64.exe"
+            $publisherFinalFileName = "publisher.exe"
+          }
+          elseif("${{ runner.os }}" -like "*mac*" -and "${{ runner.arch }}" -like "*arm*"){
+            $publisherFileName = "publisher.osx-arm64"
+          }
+          elseif ("${{ runner.os }}" -like "*mac*" -and "${{ runner.arch }}" -like "*x86_64*") {
+            $publisherFileName = "publisher.osx-x64"
+          }
+          
           $uri = "https://github.com/Azure/apiops/releases/download/${{ env.apiops_release_version }}/$publisherFileName"
-          $destinationFilePath = Join-Path "${{ runner.temp }}" "publisher.exe"
+          $destinationFilePath = Join-Path "${{ runner.temp }}" $publisherFinalFileName
           Invoke-WebRequest -Uri "$uri" -OutFile "$destinationFilePath"
 
           if ("${{ runner.os }}" -like "*linux*")
