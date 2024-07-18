@@ -31,11 +31,11 @@ jobs:
         with:
           fetch-depth: 2
     
-      # Run Spectral
-      - uses: actions/setup-node@v3
+      ## Run Spectral
+      - uses: actions/setup-node@v4
         with:
-          node-version: "14"
-      - run: npm install -g @stoplight/spectral
+          node-version: "20"
+      - run: npm install -g @stoplight/spectral-cli
       - run: spectral lint "${{ GITHUB.WORKSPACE }}/${{ inputs.API_MANAGEMENT_SERVICE_OUTPUT_FOLDER_PATH }}\apis\*.{json,yml,yaml}" --ruleset https://raw.githubusercontent.com/connectedcircuits/devops-api-linter/main/rules.yaml
 
       # Add this step for each APIM environment and pass specific set of secrets that you want replaced in the env section below
