@@ -5,7 +5,15 @@ info:
   version: ""
 servers:
   - url: https://www.bing.com
-paths: {}
+paths:
+  /:
+    get:
+      summary: GET
+      description: GET
+      operationId: get
+      responses:
+        "200":
+          description: ""
 components:
   securitySchemes:
     apiKeyHeader:
