@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.002.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{6CB86211-E017-4349-9103-C3A17B2DEA38}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DirectLineEchoBot", "src\DirectLineEchoBot\DirectLineEchoBot.csproj", "{089C06AB-97AC-4481-BD7D-33CF09A0D541}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DirectLineClient", "src\DirectLineClient\DirectLineClient.csproj", "{BE182B00-74E0-48DE-B065-DFA0CE1A5AA1}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{089C06AB-97AC-4481-BD7D-33CF09A0D541}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{089C06AB-97AC-4481-BD7D-33CF09A0D541}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{089C06AB-97AC-4481-BD7D-33CF09A0D541}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{089C06AB-97AC-4481-BD7D-33CF09A0D541}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BE182B00-74E0-48DE-B065-DFA0CE1A5AA1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BE182B00-74E0-48DE-B065-DFA0CE1A5AA1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BE182B00-74E0-48DE-B065-DFA0CE1A5AA1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BE182B00-74E0-48DE-B065-DFA0CE1A5AA1}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{089C06AB-97AC-4481-BD7D-33CF09A0D541} = {6CB86211-E017-4349-9103-C3A17B2DEA38}
+		{BE182B00-74E0-48DE-B065-DFA0CE1A5AA1} = {6CB86211-E017-4349-9103-C3A17B2DEA38}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {7DAEBBB2-DD35-4B6C-9BEA-E153BE6E6583}
+	EndGlobalSection
+EndGlobal

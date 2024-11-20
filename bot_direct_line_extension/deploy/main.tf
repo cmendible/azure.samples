@@ -9,7 +9,7 @@ locals {
 
 resource "azurerm_resource_group" "rg" {
   name     = local.name
-  location = "West Europe"
+  location = "eastus2"
 }
 
 resource "azurerm_user_assigned_identity" "id" {
@@ -22,14 +22,15 @@ resource "azurerm_application_insights" "ai" {
   name                = local.name
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
+  workspace_id        = azurerm_log_analytics_workspace.la.id
   application_type    = "web"
 }
 
-resource "azurerm_application_insights_api_key" "key" {
-  name                    = local.name
-  application_insights_id = azurerm_application_insights.ai.id
-  read_permissions        = ["aggregate", "api", "draft", "extendqueries", "search"]
-}
+# resource "azurerm_application_insights_api_key" "key" {
+#   name                    = local.name
+#   application_insights_id = azurerm_application_insights.ai.id
+#   read_permissions        = ["aggregate", "api", "draft", "extendqueries", "search"]
+# }
 
 resource "azurerm_log_analytics_workspace" "la" {
   name                = local.name
@@ -81,7 +82,7 @@ resource "azurerm_windows_web_app" "bot" {
     APPINSIGHTS_INSTRUMENTATIONKEY        = azurerm_application_insights.ai.instrumentation_key
     APPLICATIONINSIGHTS_CONNECTION_STRING = azurerm_application_insights.ai.connection_string
     DIRECTLINE_EXTENSION_VERSION          = "latest"
-    DirectLineExtensionKey                = "" // Terraform's azurerm_bot_channel_directline does not return the DirectLine Extension Key
+    DirectLineExtensionKey                = "" //azurerm_bot_channel_directline.directline.site[0].key
     MicrosoftAppType                      = "UserAssignedMSI"
     MicrosoftAppId                        = azurerm_user_assigned_identity.id.client_id
     MicrosoftAppPassword                  = ""
@@ -111,8 +112,8 @@ resource "azapi_resource" "bot" {
       schemaTransformationVersion       = "1.3"
       isCmekEnabled                     = false
       developerAppInsightKey            = azurerm_application_insights.ai.instrumentation_key
-      developerAppInsightsApiKey        = azurerm_application_insights_api_key.key.api_key
       developerAppInsightsApplicationId = azurerm_application_insights.ai.app_id
+      # developerAppInsightsApiKey        = azurerm_application_insights_api_key.key.api_key
     }
   })
 }
@@ -136,25 +137,25 @@ resource "azurerm_bot_channel_directline" "directline" {
   ]
 }
 
+resource "azurerm_bot_channel_ms_teams" "teams" {
+  bot_name            = local.name
+  location            = "global"
+  resource_group_name = azurerm_resource_group.rg.name
+  depends_on = [
+    azapi_resource.bot
+  ]
+}
+
 resource "azurerm_monitor_diagnostic_setting" "bot_diagnostics" {
   name                       = local.name
   target_resource_id         = azapi_resource.bot.id
   log_analytics_workspace_id = azurerm_log_analytics_workspace.la.id
 
-  log {
+  enabled_log {
     category = "BotRequest"
-    enabled  = true
-    retention_policy {
-      days    = 0
-      enabled = false
-    }
   }
 
   metric {
     category = "AllMetrics"
-    retention_policy {
-      days    = 0
-      enabled = false
-    }
   }
 }
