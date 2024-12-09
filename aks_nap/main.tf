@@ -16,6 +16,18 @@ provider "azurerm" {
   features {}
 }
 
+variable "resource_group_name" {
+  description = "The name of the resource group"
+  type        = string
+  default     = "aks-nap"
+}
+
+variable "cluster_name" {
+  description = "The name of the AKS cluster"
+  type        = string
+  default     = "aks-nap"
+}
+
 resource "azurerm_resource_group" "rg" {
   name     = var.resource_group_name
   location = "Spain Central"
@@ -59,16 +71,4 @@ resource "azapi_update_resource" "nap" {
       }
     }
   }
-}
-
-variable "resource_group_name" {
-  description = "The name of the resource group"
-  type        = string
-  default     = "aks-nap"
-}
-
-variable "cluster_name" {
-  description = "The name of the AKS cluster"
-  type        = string
-  default     = "aks-nap"
 }
