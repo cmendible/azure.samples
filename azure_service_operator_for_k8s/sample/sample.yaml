@@ -1,6 +1,7 @@
-apiVersion: azure.microsoft.com/v1alpha1
+apiVersion: resources.azure.com/v1api20200601
 kind: ResourceGroup
 metadata:
   name: aso-test-resource-group
+  namespace: default
 spec:
-  location: "westeurope"
+  location: westeurope

@@ -1,7 +1,7 @@
 # Create the azureoperator-system namespace in k8s
 resource "kubernetes_namespace" "azure-service-operator" {
   metadata {
-    name = "azureoperator-system"
+    name = "azureserviceoperator-system"
   }
 }
 
@@ -12,23 +12,32 @@ resource "kubernetes_namespace" "cert-manager" {
   }
 }
 
-# Install the cert-manager helm chart version 0.12.0
+# Install the cert-manager helm chart
 resource "helm_release" "cert-manager" {
   name       = "cert-manager"
   chart      = "cert-manager"
-  version    = "0.12.0"
+  version    = "1.16.3"
   namespace  = kubernetes_namespace.cert-manager.metadata.0.name
   repository = "https://charts.jetstack.io"
+
+  set {
+    name  = "crds.enabled"
+    value = "true"
+  }
 }
 
-# Install the cert-managerazure-service-operator helm chart version 0.1.0
-# azureOperatorKeyvault is used so secrets are saved by the operator in a Key Vault instead of using k8s secrets
+# Install the cert-managerazure-service-operator helm chart
 resource "helm_release" "azure-service-operator" {
   name       = "aso"
   chart      = "azure-service-operator"
-  version    = "0.1.0"
+  version    = "2.11.0"
   namespace  = kubernetes_namespace.azure-service-operator.metadata.0.name
-  repository = "https://github.com/Azure/azure-service-operator/raw/master/charts/"
+  repository = "https://raw.githubusercontent.com/Azure/azure-service-operator/refs/heads/main/v2/charts/"
+
+  set {
+    name  = "crdPattern"
+    value = "*"
+  }
 
   set {
     name  = "azureSubscriptionID"
@@ -42,17 +51,12 @@ resource "helm_release" "azure-service-operator" {
 
   set {
     name  = "azureClientID"
-    value = azuread_application.sp.application_id
+    value = azurerm_user_assigned_identity.mi.client_id
   }
 
   set {
-    name  = "azureClientSecret"
-    value = azuread_application_password.sp_password.value
-  }
-
-  set {
-    name  = "azureOperatorKeyvault"
-    value = azurerm_key_vault.kv.name
+    name  = "useWorkloadIdentityAuth"
+    value = "true"
   }
 
   depends_on = [

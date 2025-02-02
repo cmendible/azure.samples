@@ -1,15 +1,19 @@
-variable resource_group_name {
-  default = "<resource group where aks is deployed>"
+variable "resource_group_name" {
+  default = "rg-aso-demo"
 }
 
-variable cluster_name {
-  default = "<name of the aks cluster>"
+variable "location" {
+  default = "northeurope"
 }
 
-variable service_principal_name {
-  default = "<name of the service princiapl>"
+variable "cluster_name" {
+  default = "aks-aso"
 }
 
-variable key_vault_name {
-  default = "name of the keyvault"
+variable "dns_prefix" {
+  default = "aks-aso"
+}
+
+variable "managed_identity_name" {
+  default = "aks-workload-identity"
 }
