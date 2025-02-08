@@ -1,0 +1,9 @@
+apiVersion: kro.run/v1alpha1
+kind: SimpleWebApplication
+metadata:
+  name: test-httpd
+spec:
+  name: test-httpd
+  image: httpd
+  ingress:
+    enabled: true
