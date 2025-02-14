@@ -1,11 +1,11 @@
 # Location of the services
 variable "location" {
-  default = "west europe"
+  default = "northeurope"
 }
 
 # Resource Group Name
 variable "resource_group" {
-  default = "aks-restricted-egress"
+  default = "aks-restricted"
 }
 
 # Name of the AKS cluster

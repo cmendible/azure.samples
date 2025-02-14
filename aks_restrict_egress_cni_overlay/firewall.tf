@@ -44,7 +44,7 @@ resource "azurerm_firewall_policy_rule_collection_group" "policies" {
       name                  = "apiudp"
       source_addresses      = ["*"]
       destination_ports     = [1194]
-      destination_addresses = ["AzureCloud.WestEurope"]
+      destination_addresses = ["AzureCloud.NorthEurope"]
       protocols             = ["UDP"]
     }
 
@@ -52,7 +52,7 @@ resource "azurerm_firewall_policy_rule_collection_group" "policies" {
       name                  = "apitcp"
       source_addresses      = ["*"]
       destination_ports     = [9000]
-      destination_addresses = ["AzureCloud.WestEurope"]
+      destination_addresses = ["AzureCloud.NorthEurope"]
       protocols             = ["TCP"]
     }
 
@@ -62,17 +62,6 @@ resource "azurerm_firewall_policy_rule_collection_group" "policies" {
       destination_ports = [123]
       destination_fqdns = ["ntp.ubuntu.com"]
       protocols         = ["UDP"]
-    }
-
-    // For applications outside of the kube-system or gatekeeper-system namespaces that needs 
-    // to talk to the API server, an additional network rule to allow TCP communication to port
-    // 443 for the API server IP in addition to adding application rule for fqdn-tag AzureKubernetesService is required.
-    rule {
-      name                  = "apiiptcp"
-      source_addresses      = ["*"]
-      destination_ports     = [443]
-      destination_addresses = [data.dns_a_record_set.aks.addrs[0]]
-      protocols             = ["TCP"]
     }
   }
 
@@ -114,6 +103,22 @@ resource "azurerm_firewall_policy_rule_collection_group" "aks_api_policies" {
   name               = "aks-api"
   firewall_policy_id = azurerm_firewall_policy.policy.id
   priority           = 1100
+
+   network_rule_collection {
+      name     = "aksfwnr"
+      priority = 100
+      action   = "Allow"
+      // For applications outside of the kube-system or gatekeeper-system namespaces that needs 
+      // to talk to the API server, an additional network rule to allow TCP communication to port
+      // 443 for the API server IP in addition to adding application rule for fqdn-tag AzureKubernetesService is required.
+      rule {
+        name                  = "apiiptcp"
+        source_addresses      = ["*"]
+        destination_ports     = [443]
+        destination_addresses = [data.dns_a_record_set.aks.addrs[0]]
+        protocols             = ["TCP"]
+      }
+    }
 
   application_rule_collection {
     name     = "aksfwar"
