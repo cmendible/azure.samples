@@ -91,3 +91,15 @@ resource "helm_release" "kro" {
   namespace        = "kro"
   repository       = "oci://ghcr.io/kro-run/kro"
 }
+
+resource "azurerm_role_assignment" "kubelet_network_contributor" {
+  scope                = azurerm_virtual_network.vnet.id
+  role_definition_name = "Network Contributor"
+  principal_id         = azurerm_kubernetes_cluster.k8s.identity[0].principal_id
+}
+
+resource "azurerm_role_assignment" "kubelet_network_reader" {
+  scope                = azurerm_virtual_network.vnet.id
+  role_definition_name = "Reader"
+  principal_id         = azurerm_kubernetes_cluster.k8s.identity[0].principal_id
+}

@@ -1,3 +1,39 @@
+variable "resource_group_name" {
+  default = "rg-chaos-mesh-demo"
+}
+
+variable "location" {
+  default = "spaincentral"
+}
+
+variable "cluster_name" {
+  default = "aks-chaos-mesh"
+}
+
+variable "dns_prefix" {
+  default = "aks-chaos-mesh"
+}
+
+#  Create Resource Group
+resource "azurerm_resource_group" "rg" {
+  name     = var.resource_group_name
+  location = var.location
+}
+
+resource "azurerm_virtual_network" "vnet" {
+  name                = "vnet-aks-chaos-mesh"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  address_space       = ["10.0.0.0/16"]
+}
+
+resource "azurerm_subnet" "aks-subnet" {
+  name                 = "aks-subnet"
+  resource_group_name  = azurerm_resource_group.rg.name
+  virtual_network_name = azurerm_virtual_network.vnet.name
+  address_prefixes     = ["10.0.1.0/24"]
+}
+
 # Deploy Kubernetes
 resource "azurerm_kubernetes_cluster" "k8s" {
   name                = var.cluster_name
@@ -9,9 +45,14 @@ resource "azurerm_kubernetes_cluster" "k8s" {
   workload_identity_enabled         = true
   role_based_access_control_enabled = true
 
+  # Enable Application routing add-on with NGINX features
+  web_app_routing {
+    dns_zone_ids = []
+  }
+
   default_node_pool {
     name                 = "default"
-    node_count           = 2
+    node_count           = 3
     vm_size              = "Standard_D2s_v3"
     os_disk_size_gb      = 30
     os_disk_type         = "Ephemeral"
@@ -41,6 +82,25 @@ resource "azurerm_kubernetes_cluster" "k8s" {
   }
 }
 
+# Install the chaos helm chart
+resource "helm_release" "chaos" {
+  create_namespace = true
+  name             = "chaos-mesh"
+  chart            = "chaos-mesh"
+  namespace        = "chaos-testng"
+  repository       = "https://charts.chaos-mesh.org"
+
+  set {
+    name  = "chaosDaemon.runtime"
+    value = "containerd"
+  }
+
+  set {
+    name  = "chaosDaemon.socketPath"
+    value = "/run/containerd/containerd.sock"
+  }
+}
+
 resource "azurerm_role_assignment" "kubelet_network_contributor" {
   scope                = azurerm_virtual_network.vnet.id
   role_definition_name = "Network Contributor"
@@ -51,27 +111,4 @@ resource "azurerm_role_assignment" "kubelet_network_reader" {
   scope                = azurerm_virtual_network.vnet.id
   role_definition_name = "Reader"
   principal_id         = azurerm_kubernetes_cluster.k8s.identity[0].principal_id
-}
-
-# Create Managed Identity
-resource "azurerm_user_assigned_identity" "mi" {
-  resource_group_name = azurerm_resource_group.rg.name
-  location            = azurerm_resource_group.rg.location
-
-  name = var.managed_identity_name
-}
-
-resource "azurerm_role_assignment" "mi" {
-  scope                = data.azurerm_subscription.current.id
-  role_definition_name = "Contributor"
-  principal_id         = azurerm_user_assigned_identity.mi.principal_id
-}
-
-resource "azurerm_federated_identity_credential" "federation" {
-  name                = "aks-workload-identity"
-  resource_group_name = azurerm_resource_group.rg.name
-  audience            = ["api://AzureADTokenExchange"]
-  issuer              = azurerm_kubernetes_cluster.k8s.oidc_issuer_url
-  parent_id           = azurerm_user_assigned_identity.mi.id
-  subject             = "system:serviceaccount:azureserviceoperator-system:azureserviceoperator-default"
 }
