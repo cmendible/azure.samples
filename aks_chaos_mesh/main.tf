@@ -87,7 +87,7 @@ resource "helm_release" "chaos" {
   create_namespace = true
   name             = "chaos-mesh"
   chart            = "chaos-mesh"
-  namespace        = "chaos-testng"
+  namespace        = "chaos-testing"
   repository       = "https://charts.chaos-mesh.org"
 
   set {
