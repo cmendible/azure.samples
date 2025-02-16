@@ -82,6 +82,18 @@ resource "azurerm_kubernetes_cluster" "k8s" {
   }
 }
 
+resource "azurerm_role_assignment" "kubelet_network_contributor" {
+  scope                = azurerm_virtual_network.vnet.id
+  role_definition_name = "Network Contributor"
+  principal_id         = azurerm_kubernetes_cluster.k8s.identity[0].principal_id
+}
+
+resource "azurerm_role_assignment" "kubelet_network_reader" {
+  scope                = azurerm_virtual_network.vnet.id
+  role_definition_name = "Reader"
+  principal_id         = azurerm_kubernetes_cluster.k8s.identity[0].principal_id
+}
+
 # Install the chaos helm chart
 resource "helm_release" "chaos" {
   create_namespace = true
@@ -99,16 +111,12 @@ resource "helm_release" "chaos" {
     name  = "chaosDaemon.socketPath"
     value = "/run/containerd/containerd.sock"
   }
-}
 
-resource "azurerm_role_assignment" "kubelet_network_contributor" {
-  scope                = azurerm_virtual_network.vnet.id
-  role_definition_name = "Network Contributor"
-  principal_id         = azurerm_kubernetes_cluster.k8s.identity[0].principal_id
-}
-
-resource "azurerm_role_assignment" "kubelet_network_reader" {
-  scope                = azurerm_virtual_network.vnet.id
-  role_definition_name = "Reader"
-  principal_id         = azurerm_kubernetes_cluster.k8s.identity[0].principal_id
+  # Enable FilterNamespace
+  # Annotate namespaces to enable chaos experiments: kubectl annotate ns $NAMESPACE chaos-mesh.org/inject=enabled
+  # https://chaos-mesh.org/docs/configure-enabled-namespace/#enable-filternamespace
+  set {
+    name  = "controllerManager.enableFilterNamespace"
+    value = "true"
+  }
 }
