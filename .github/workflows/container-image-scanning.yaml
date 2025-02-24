@@ -1,0 +1,110 @@
+name: Container image scanning and certification
+
+on:
+  workflow_dispatch:
+    inputs:
+      image:
+        description: "Image to scan and certify"
+        required: true
+        default: "mcr.microsoft.com/azure-api-management/gateway:2.8.0"
+        type: string
+      severity:
+        description: "Severities that will be considered as failures"
+        required: true
+        default: "CRITICAL,HIGH"
+        type: string
+
+permissions: read-all
+
+jobs:
+  quarantine-image:
+    runs-on: ubuntu-latest
+    environment: quarantine
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: "Run Trivy vulnerability scanner for: ${{ github.event.inputs.image }}"
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: "${{ github.event.inputs.image }}"
+          format: "table"
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          severity: "${{ github.event.inputs.severity }}"
+
+      - name: Set up Docker
+        uses: docker/setup-docker-action@v4
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: '{"clientId":"${{ secrets.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","subscriptionId":"${{ secrets.AZURE_SUBSCRIPTION_ID }}","tenantId":"${{ secrets.AZURE_TENANT_ID }}"}'
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.QUARANTINE_ACR_NAME}}.azurecr.io
+          username: ${{ secrets.AZURE_CLIENT_ID }}
+          password: ${{ secrets.AZURE_CLIENT_SECRET }}
+
+      - name: Push image to quarantine registry
+        run: |
+          image_name="${{ github.event.inputs.image }}"
+          image_name_without_registry="${image_name#*/}"
+          quarantine_image_name="${{ secrets.QUARANTINE_ACR_NAME }}.azurecr.io/${image_name_without_registry}"
+          echo "New image name: $quarantine_image_name"
+          docker pull "${{ github.event.inputs.image }}"
+          docker tag "${{ github.event.inputs.image }}" "$quarantine_image_name"
+          docker push "$quarantine_image_name"
+
+      - name: Run Defender for Containers Gate
+        run: |
+          image_name="${{ github.event.inputs.image }}"
+          image_name_without_registry="${image_name#*/}"
+          image_repository="${image_name_without_registry%:*}"
+          image_tag="${image_name_without_registry#*:}"
+          ./.github/workflows/scripts/defender-container-image-gate.sh ${{ secrets.QUARANTINE_ACR_NAME }} $image_repository $image_tag
+
+  certify-image:
+    runs-on: ubuntu-latest
+    needs: quarantine-image
+    environment: production
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker
+        uses: docker/setup-docker-action@v4
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: '{"clientId":"${{ secrets.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","subscriptionId":"${{ secrets.AZURE_SUBSCRIPTION_ID }}","tenantId":"${{ secrets.AZURE_TENANT_ID }}"}'
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.PRODUCTION_ACR_NAME }}.azurecr.io
+          username: ${{ secrets.AZURE_CLIENT_ID }}
+          password: ${{ secrets.AZURE_CLIENT_SECRET }}
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.QUARANTINE_ACR_NAME }}.azurecr.io
+          username: ${{ secrets.AZURE_CLIENT_ID }}
+          password: ${{ secrets.AZURE_CLIENT_SECRET }}
+
+      - name: Push image to production registry
+        run: |
+          image_name="${{ github.event.inputs.image }}"
+          image_name_without_registry="${image_name#*/}"
+          quarantine_image_name="${{ secrets.QUARANTINE_ACR_NAME }}.azurecr.io/${image_name_without_registry}"
+          production_image_name="${{ secrets.PRODUCTION_ACR_NAME }}.azurecr.io/${image_name_without_registry}"
+          docker pull $quarantine_image_name
+          docker tag $quarantine_image_name $production_image_name
+          docker push $production_image_name
