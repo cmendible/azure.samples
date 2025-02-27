@@ -1,0 +1,2 @@
+query,context,response,ground_truth
+What is the capital of Spain?,Spain is in Europe,Madrid is the capital of Spain.,Madrid

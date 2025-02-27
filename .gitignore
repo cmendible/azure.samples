@@ -269,6 +269,7 @@ __pycache__/
 .terraform/
 
 # Environment
+.env
 env.conf
 
 # appsettings.json

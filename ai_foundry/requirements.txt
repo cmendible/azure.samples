@@ -1,0 +1,4 @@
+ipykernel
+promptflow
+promptflow.core
+azure-ai-evaluation
