@@ -8,7 +8,8 @@
 	"features": {
 		"ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
 		"ghcr.io/devcontainers-extra/features/terraform-asdf:2": {},
-		"ghcr.io/devcontainers/features/azure-cli:1": {}
+		"ghcr.io/devcontainers/features/azure-cli:1": {},
+		"ghcr.io/devcontainers/features/dotnet:2": {}
 	},
 
 	// Use this environment variable if you need to bind mount your local source code into a new container.
@@ -28,7 +29,8 @@
 			"extensions": [
 				"hashicorp.terraform",
 				"GitHub.copilot",
-				"GitHub.copilot-chat"
+				"GitHub.copilot-chat",
+				"ms-dotnettools.csdevkit"
 			]
 		}
 	}
