@@ -1,6 +1,6 @@
 # Location of the services
 variable "location" {
-  default = "west europe"
+  default = "spain central"
 }
 
 # Resource Group Name

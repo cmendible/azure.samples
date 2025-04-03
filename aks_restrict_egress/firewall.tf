@@ -67,7 +67,7 @@ resource "azurerm_firewall_policy_rule_collection_group" "policies" {
     name     = "aksfwar"
     priority = 200
     action   = "Allow"
-    
+
     rule {
       name = "fqdn"
       protocols {
@@ -104,4 +104,6 @@ resource "azurerm_firewall_policy_rule_collection_group" "aks_api_policies" {
       destination_fqdn_tags = [azurerm_kubernetes_cluster.aks.fqdn]
     }
   }
+
+  depends_on = [azurerm_firewall_policy_rule_collection_group.policies]
 }

@@ -52,7 +52,8 @@ resource "azurerm_kubernetes_cluster" "aks" {
     azurerm_firewall.firewall,
     azurerm_subnet_route_table_association.restrict,
     azurerm_virtual_network_peering.peer-vnet-hub-with-vnet,
-    azurerm_virtual_network_peering.peer-vnet-vnet-with-hub
+    azurerm_virtual_network_peering.peer-vnet-vnet-with-hub,
+    azurerm_firewall_policy_rule_collection_group.policies,
   ]
 }
 
