@@ -3,10 +3,12 @@
 //
 // Generated with EchoBot .NET Template version v4.15.2
 
+using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Builder.Integration.AspNet.Core;
+using Microsoft.Extensions.Logging;
 
 namespace EchoBot.Controllers
 {
@@ -20,10 +22,13 @@ namespace EchoBot.Controllers
         private readonly IBotFrameworkHttpAdapter _adapter;
         private readonly IBot _bot;
 
-        public BotController(IBotFrameworkHttpAdapter adapter, IBot bot)
+        private readonly ILogger<BotController> _logger;
+
+        public BotController(IBotFrameworkHttpAdapter adapter, IBot bot, ILogger<BotController> logger)
         {
             _adapter = adapter;
             _bot = bot;
+            _logger = logger;
         }
 
         [HttpPost]
@@ -32,6 +37,12 @@ namespace EchoBot.Controllers
         {
             // Delegate the processing of the HTTP POST to the adapter.
             // The adapter will invoke the bot.
+            foreach (var header in Request.Headers)
+            {
+                _logger.LogDebug("Header: {HeaderKey} = {HeaderValue}", header.Key, header.Value);
+                Console.WriteLine($"Header: {header.Key} = {header.Value}");
+            }
+
             await _adapter.ProcessAsync(Request, Response, _bot);
         }
     }
