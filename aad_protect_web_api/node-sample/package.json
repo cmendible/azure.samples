@@ -16,7 +16,7 @@
     "express": "^4.17.1",
     "express-jwt": "^6.1.0",
     "jwks-rsa": "^2.0.4",
-    "passport": "^0.4.1",
+    "passport": "^0.6.0",
     "passport-jwt": "^4.0.0"
   }
 }
