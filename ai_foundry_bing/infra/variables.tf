@@ -3,11 +3,11 @@ variable "resource_group_name" {
 }
 
 variable "location" {
-  default = "eastus2"
+  default = "spaincentral"
 }
 
 variable "key_vault_name" {
-  default = "kv-aifoundry-azapi"
+  default = "kv-aifoundryhub-azapi"
 }
 
 variable "storage_account_name" {

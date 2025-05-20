@@ -2,10 +2,6 @@ data "azurerm_subscription" "current" {}
 
 data "azurerm_client_config" "current" {}
 
-resource "random_id" "random" {
-  byte_length = 8
-}
-
 resource "azurerm_resource_group" "rg" {
   name     = var.resource_group_name
   location = var.location
@@ -19,7 +15,7 @@ resource "azurerm_key_vault" "kv" {
   tenant_id           = data.azurerm_subscription.current.tenant_id # Azure tenant ID
 
   sku_name                 = "standard" # SKU tier for the Key Vault
-  purge_protection_enabled = true       # Enables purge protection to prevent accidental deletion
+  purge_protection_enabled = false      # Enables purge protection to prevent accidental deletion
 }
 
 # Set an access policy for the Key Vault to allow certain operations
