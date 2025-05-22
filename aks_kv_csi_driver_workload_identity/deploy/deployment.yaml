@@ -1,0 +1,71 @@
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: the-super-secret-store # Make sure this value is unique per namespace
+spec:
+  provider: azure
+  parameters:
+    usePodIdentity: "false"
+    clientID: "<workload-identity-client-id>" # This is the client ID of the workload identity
+    keyvaultName: "<key-vault-name>" # This is the name of the Azure Key Vault
+    objects: |
+      array:
+        - |
+          objectName: super-secret
+          objectType: secret
+          objectVersion: ""
+    tenantId: "<tenant-id>" # This is the tenant ID of the Azure Key Vault
+  secretObjects: # Sync as a K8s Secret (This is optional)
+    - data:
+        - key: super-secret
+          objectName: super-secret # name of the mounted content to sync; this could be the object name or the object alias
+      secretName: k8s-super-secret # name of the Kubernetes secret object
+      type: Opaque
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kv-csi-driver-test
+  namespace: default
+  labels:
+    app: kv-csi-driver-test
+spec:
+  replicas: 1
+  template:
+    metadata:
+      name: kv-csi-driver-test
+      labels:
+        app: kv-csi-driver-test
+        azure.workload.identity/use: "true"
+    spec:
+      serviceAccountName: workload-identity-test-account
+      containers:
+        - name: kv-csi-driver-test
+          image: mcr.microsoft.com/azure-cli
+          ports:
+            - containerPort: 80
+          command:
+            - sh
+            - -c
+            - sleep 1d
+          volumeMounts:
+            - name: the-super-secret-store
+              mountPath: "/mnt/secrets-store"
+              readOnly: true
+          env:
+            - name: SECRET_DATA
+              valueFrom:
+                secretKeyRef:
+                  name: k8s-super-secret
+                  key: super-secret
+      volumes:
+        - name: the-super-secret-store
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: "the-super-secret-store"
+  selector:
+    matchLabels:
+      app: kv-csi-driver-test
