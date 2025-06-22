@@ -3,7 +3,7 @@ resource "azurerm_route_table" "restrict" {
   name                          = "restrict-aks-egress"
   location                      = azurerm_resource_group.rg.location
   resource_group_name           = azurerm_resource_group.rg.name
-  disable_bgp_route_propagation = false
+  bgp_route_propagation_enabled = true
 
   route {
     name                   = "to-firewall"

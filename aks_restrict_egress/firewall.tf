@@ -13,6 +13,8 @@ resource "azurerm_firewall" "firewall" {
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   firewall_policy_id  = azurerm_firewall_policy.policy.id
+  sku_tier            = "Standard"
+  sku_name            = "AZFW_VNet"
   ip_configuration {
     name                 = "configuration"
     subnet_id            = azurerm_subnet.firewall.id
