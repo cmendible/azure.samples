@@ -15,38 +15,31 @@ resource "azurerm_kubernetes_cluster" "aks" {
     vnet_subnet_id  = azurerm_subnet.aks_nodes.id
   }
 
-  private_cluster_enabled = true
-  private_dns_zone_id     = var.private_dns_zone_in_hub ? azurerm_private_dns_zone.private.id : azurerm_private_dns_zone.aks_private_dns_zone.id
+  role_based_access_control_enabled = true
+
+  private_cluster_enabled             = true
+  private_dns_zone_id                 = azurerm_private_dns_zone.private.id
+  private_cluster_public_fqdn_enabled = false
 
   # Using Managed Identity
   identity {
-    type                      = "UserAssigned"
-    user_assigned_identity_id = azurerm_user_assigned_identity.aks.id
+    type         = "UserAssigned"
+    identity_ids = [azurerm_user_assigned_identity.aks.id]
   }
 
   network_profile {
     # The --service-cidr is used to assign internal services in the AKS cluster an IP address. This IP address range should be an address space that isn't in use elsewhere in your network environment, including any on-premises network ranges if you connect, or plan to connect, your Azure virtual networks using Express Route or a Site-to-Site VPN connection.
     service_cidr = "172.0.0.0/16"
     # The --dns-service-ip address should be the .10 address of your service IP address range.
-    dns_service_ip = "172.0.0.10"
-    # The --docker-bridge-address lets the AKS nodes communicate with the underlying management platform. This IP address must not be within the virtual network IP address range of your cluster, and shouldn't overlap with other address ranges in use on your network.
-    docker_bridge_cidr = "172.17.0.1/16"
-    network_plugin     = "azure"
-    network_policy     = "azure"
-  }
-
-  role_based_access_control {
-    enabled = true
-  }
-
-  addon_profile {
-    kube_dashboard {
-      enabled = false
-    }
+    dns_service_ip      = "172.0.0.10"
+    network_plugin      = "azure"
+    network_plugin_mode = "overlay"
+    network_policy      = "cilium"
+    network_data_plane  = "cilium"
   }
 
   depends_on = [
-    azurerm_role_assignment.kubelet_aks_private_dns_zone_contributor
+    azurerm_role_assignment.private_contributor
   ]
 }
 

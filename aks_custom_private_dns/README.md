@@ -1,7 +1,7 @@
 ## Install
 
 ``` powershell
-terraform apply -var "private_dns_zone_in_hub=true"
+terraform apply
 
 $resource_group=$(terraform output resource_group)
 $aks_name=$(terraform output aks_name)

@@ -1,18 +1,14 @@
 # Location of the services
 variable "location" {
-  default = "westeurope"
+  default = "northeurope"
 }
 
 # Resource Group Name
 variable "resource_group" {
-  default = "aks-enhanced-subnet"
+  default = "aks-private"
 }
 
 # Name of the AKS cluster
 variable "aks_name" {
-  default = "aks-priavate"
-}
-
-variable "private_dns_zone_in_hub" {
-  default = false
+  default = "aks-private"
 }

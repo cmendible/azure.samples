@@ -37,16 +37,16 @@ resource "azurerm_virtual_network" "vnet" {
   address_space       = ["10.0.0.0/16", "192.1.0.0/16"]
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  dns_servers         = var.private_dns_zone_in_hub ? [azurerm_container_group.containergroup.ip_address] : []
+  dns_servers         = [azurerm_container_group.containergroup.ip_address]
 }
 
 # Create the Subnet for AKS nodes.
 resource "azurerm_subnet" "aks_nodes" {
-  name                                           = "aks_nodes"
-  resource_group_name                            = azurerm_resource_group.rg.name
-  virtual_network_name                           = azurerm_virtual_network.vnet.name
-  address_prefixes                               = ["10.0.0.0/16"]
-  enforce_private_link_endpoint_network_policies = true
+  name                                          = "aks_nodes"
+  resource_group_name                           = azurerm_resource_group.rg.name
+  virtual_network_name                          = azurerm_virtual_network.vnet.name
+  address_prefixes                              = ["10.0.0.0/16"]
+  private_link_service_network_policies_enabled = true
 }
 
 # Azure Virtual Network peering between Virtual Network A and B
