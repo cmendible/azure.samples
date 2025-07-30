@@ -1,0 +1,11 @@
+azure-ai-projects
+azure.ai.agents
+azure-core
+azure-identity
+azure-monitor-opentelemetry
+chainlit==2.6.0
+django
+flask
+opentelemetry-instrumentation-openai-v2
+psycopg2-binary
+python-dotenv

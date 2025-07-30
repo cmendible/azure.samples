@@ -274,3 +274,4 @@ env.conf
 
 # appsettings.json
 appsettings.json
+ai_foundry_agents/.gitignore
