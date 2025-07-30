@@ -1,0 +1,6 @@
+azure-ai-projects
+azure-monitor-opentelemetry
+opentelemetry-instrumentation-openai-v2
+azure-identity
+python-dotenv
+chainlit
