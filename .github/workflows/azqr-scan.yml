@@ -1,0 +1,25 @@
+# GitHub Actions workflow for azqr
+name: azqr-scan
+
+on:
+  workflow_dispatch: # Trigger manually
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      # Run azqr scan
+      - name: Run Azure Quick Review
+        uses: Azure/azqr/.github/actions/azqr-scan@azqr-scan-action
+        env:
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+        with:
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          output-format: 'json'
