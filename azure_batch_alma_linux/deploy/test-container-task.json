@@ -1,0 +1,14 @@
+{
+  "id": "test-container-task",
+  "commandLine": "",
+  "containerSettings": {
+    "imageName": "hello-world",
+    "containerRunOptions": "--rm"
+  },
+  "userIdentity": {
+    "autoUser": {
+      "elevationLevel": "admin",
+      "scope": "pool"
+    }
+  }
+}

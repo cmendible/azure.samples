@@ -1,0 +1,10 @@
+{
+  "id": "test-docker-task",
+  "commandLine": "/bin/bash -c \"docker run --rm hello-world\"",
+  "userIdentity": {
+    "autoUser": {
+      "elevationLevel": "admin",
+      "scope": "pool"
+    }
+  }
+}
