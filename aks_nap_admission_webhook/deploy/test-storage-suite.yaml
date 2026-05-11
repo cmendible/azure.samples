@@ -1,0 +1,549 @@
+# deploy/test-storage-suite.yaml
+#
+# Static YAML equivalent of the karpenter-provider-azure storage e2e test suite.
+# Source: https://github.com/Azure/karpenter-provider-azure/blob/6b393df8311e497993b55afde9d08570cd0e2798/test/suites/storage/suite_test.go
+#
+# ┌─────────────────────────────────────────────────────────────────────────────┐
+# │  BEFORE APPLYING — replace all zone placeholders:                           │
+# │                                                                             │
+# │    kubectl get nodes -o jsonpath=\                                          │
+# │      '{range .items[*]}{.metadata.labels.topology\.kubernetes\.io/zone}    │
+# │      {"\n"}{end}' | sort -u                                                 │
+# │                                                                             │
+# │    <ZONE-1>  e.g. eastus2-1  (any zone)                                    │
+# │    <ZONE-2>  e.g. eastus2-2  (MUST be different from <ZONE-1>)             │
+# └─────────────────────────────────────────────────────────────────────────────┘
+#
+# Scenarios (each isolated in its own namespace):
+#
+#   st-dynamic-lrs    Dynamic LRS disk, WaitForFirstConsumer
+#                     → tests basic NAP node + Azure Disk provisioning
+#                     → Go test: "should run a pod with a dynamic persistent volume"
+#
+#   st-allowed-topo   Dynamic LRS disk, WaitForFirstConsumer, allowedTopologies
+#                     → tests NAP honours zone constraint from StorageClass
+#                     → Go test: "should run a pod with a dynamic persistent volume
+#                       while respecting allowed topologies"
+#
+#   st-zrs-zone-pin   ZRS disk, Immediate binding, pod pinned to <ZONE-2>
+#                     → THE WEBHOOK TEST — without the webhook, Karpenter only
+#                       sees the first NodeSelectorTerm and provisions a node in
+#                       zone 1; the pod requires zone 2 and stays Pending forever.
+#                       With the webhook the terms are merged and the pod runs.
+#                     → Go test: "should schedule a pod with ZRS PV when pod
+#                       targets a specific zone"
+#
+#   st-statefulset    StatefulSet, WaitForFirstConsumer, single-zone allowedTopologies
+#                     → tests fast volume detach/reattach (< 2 min vs 6 min without fix)
+#                     → Go test: "should run on a new node without 6+ minute delays
+#                       when disrupted"
+#                     → To simulate disruption: kubectl delete pod -n st-statefulset st-0
+#
+#   st-emptydir       Pods with emptyDir and memory-backed emptyDir volumes
+#                     → tests NAP provisions nodes for ephemeral storage requests
+#                     → Go tests: "should run a pod with ephemeral storage that uses
+#                       emptyDir / memory-backed emptyDir"
+#
+# Usage:
+#   kubectl apply  -f deploy/test-storage-suite.yaml
+#   kubectl delete -f deploy/test-storage-suite.yaml
+#
+# Monitor all test pods at once:
+#   kubectl get pods -A -l suite=storage-test -w
+#
+# Watch webhook logs during ZRS PV creation:
+#   kubectl logs -n pv-zone-fix-webhook -l app.kubernetes.io/name=pv-zone-fix-webhook -f
+# ---------------------------------------------------------------------------
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Scenario 1 — Dynamic LRS disk (WaitForFirstConsumer)
+# Go test: "should run a pod with a dynamic persistent volume"
+# ═══════════════════════════════════════════════════════════════════════════
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: st-dynamic-lrs
+  labels:
+    suite: storage-test
+
+---
+# WaitForFirstConsumer: the PV is provisioned only after a pod is scheduled,
+# so the disk is created in the same zone as the NAP node.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: st-sc-dynamic-lrs
+provisioner: disk.csi.azure.com
+parameters:
+  skuName: Premium_LRS
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: st-pvc-dynamic-lrs
+  namespace: st-dynamic-lrs
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: st-sc-dynamic-lrs
+  resources:
+    requests:
+      storage: 10Gi
+
+---
+# Expected outcome: NAP provisions a node, disk binds, pod reaches Running.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: st-pod-dynamic-lrs
+  namespace: st-dynamic-lrs
+  labels:
+    suite: storage-test
+    scenario: dynamic-lrs
+spec:
+  containers:
+    - name: writer
+      image: busybox:1.37
+      command: ["/bin/sh", "-c", "echo ok > /data/ok && sleep infinity"]
+      volumeMounts:
+        - name: data
+          mountPath: /data
+      resources:
+        requests:
+          cpu: 10m
+          memory: 16Mi
+        limits:
+          cpu: 50m
+          memory: 32Mi
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: false
+        capabilities:
+          drop: ["ALL"]
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+  volumes:
+    - name: data
+      persistentVolumeClaim:
+        claimName: st-pvc-dynamic-lrs
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Scenario 2 — Dynamic LRS disk with allowedTopologies
+# Go test: "should run a pod with a dynamic persistent volume while
+#           respecting allowed topologies"
+#
+# NOTE: the Azure Disk CSI driver uses its own topology key for allowedTopologies:
+#   topology.disk.csi.azure.com/zone
+# This is distinct from the standard topology.kubernetes.io/zone used in
+# PV nodeAffinity. Both keys are present as labels on AKS nodes.
+#
+# Expected: NAP provisions a node in <ZONE-1>; pod reaches Running.
+# Verify:   kubectl get pod -n st-allowed-topo st-pod-allowed-topo -o wide
+# ═══════════════════════════════════════════════════════════════════════════
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: st-allowed-topo
+  labels:
+    suite: storage-test
+
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: st-sc-allowed-topo
+provisioner: disk.csi.azure.com
+parameters:
+  skuName: Premium_LRS
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+allowedTopologies:
+  - matchLabelExpressions:
+      - key: topology.disk.csi.azure.com/zone   # CSI driver topology key
+        values:
+          - eastus2-1
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: st-pvc-allowed-topo
+  namespace: st-allowed-topo
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: st-sc-allowed-topo
+  resources:
+    requests:
+      storage: 10Gi
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: st-pod-allowed-topo
+  namespace: st-allowed-topo
+  labels:
+    suite: storage-test
+    scenario: allowed-topo
+spec:
+  containers:
+    - name: writer
+      image: busybox:1.37
+      command: ["/bin/sh", "-c", "echo ok > /data/ok && sleep infinity"]
+      volumeMounts:
+        - name: data
+          mountPath: /data
+      resources:
+        requests:
+          cpu: 10m
+          memory: 16Mi
+        limits:
+          cpu: 50m
+          memory: 32Mi
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: false
+        capabilities:
+          drop: ["ALL"]
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+  volumes:
+    - name: data
+      persistentVolumeClaim:
+        claimName: st-pvc-allowed-topo
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Scenario 3 — ZRS disk, Immediate binding, pod pinned to <ZONE-2>
+# Go test: "should schedule a pod with ZRS PV when pod targets a specific zone"
+# Validates: sigs.k8s.io/karpenter PR #2743 + this webhook
+#
+# HOW THE BUG MANIFESTS (without the webhook):
+#   1. Immediate binding → Azure Disk CSI provisions the ZRS PV right away.
+#   2. The CSI driver sets one NodeSelectorTerm per available zone in the PV
+#      nodeAffinity (OR semantics: node must match term[0] OR term[1] OR ...).
+#   3. Karpenter/NAP only evaluates the FIRST NodeSelectorTerm → decides to
+#      provision a node in <ZONE-1>.
+#   4. The pod's nodeSelector requires <ZONE-2> → zone mismatch → pod stays
+#      Pending with "0/N nodes are available: node(s) didn't match node selector".
+#
+# WITH THE WEBHOOK:
+#   The webhook merges all NodeSelectorTerms into one term with all zone values.
+#   Karpenter evaluates the pod's nodeSelector (<ZONE-2>) together with the PV
+#   nodeAffinity (any zone OK) and correctly provisions a node in <ZONE-2>.
+#
+# WORKFLOW:
+#   PVC applied → PV provisioned immediately (Immediate) → webhook fires on PV
+#   CREATE → if terms are merged, pod is scheduled in <ZONE-2> → Running ✓
+#
+# VERIFY:
+#   # PV nodeAffinity after webhook (expect 1 term with all zones):
+#   kubectl get pv $(kubectl get pvc -n st-zrs-zone-pin st-pvc-zrs \
+#     -o jsonpath='{.spec.volumeName}') \
+#     -o jsonpath='{.spec.nodeAffinity}' | jq .
+#
+#   # Pod should land in <ZONE-2>:
+#   kubectl get pod -n st-zrs-zone-pin st-pod-zrs-pin -o wide
+# ═══════════════════════════════════════════════════════════════════════════
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: st-zrs-zone-pin
+  labels:
+    suite: storage-test
+
+---
+# No allowedTopologies — with Immediate binding the CSI driver queries all
+# available zones for ZRS and emits one NodeSelectorTerm per zone in the PV.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: st-sc-zrs
+provisioner: disk.csi.azure.com
+parameters:
+  skuName: Premium_ZRS   # ZRS = zone-redundant; disk is accessible from any zone
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+allowVolumeExpansion: true
+
+---
+# Immediate binding: this PVC triggers PV provisioning at apply time.
+# Wait for it to bind before inspecting PV nodeAffinity:
+#   kubectl get pvc -n st-zrs-zone-pin st-pvc-zrs -w
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: st-pvc-zrs
+  namespace: st-zrs-zone-pin
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: st-sc-zrs
+  resources:
+    requests:
+      storage: 10Gi
+
+---
+# Pod pinned to <ZONE-2> — intentionally NOT the first zone.
+# The karpenter test comment: "Without the fix, this would fail because the
+# scheduler only looked at the first zone."
+#
+# IMPORTANT: replace <ZONE-2> with the SECOND zone from:
+#   kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.labels.topology\.kubernetes\.io/zone}{"\n"}{end}' | sort -u
+apiVersion: v1
+kind: Pod
+metadata:
+  name: st-pod-zrs-pin
+  namespace: st-zrs-zone-pin
+  labels:
+    suite: storage-test
+    scenario: zrs-zone-pin
+spec:
+  nodeSelector:
+    topology.kubernetes.io/zone: eastus2-2
+  containers:
+    - name: writer
+      image: busybox:1.37
+      command: ["/bin/sh", "-c", "echo ok > /data/ok && sleep infinity"]
+      volumeMounts:
+        - name: data
+          mountPath: /data
+      resources:
+        requests:
+          cpu: 10m
+          memory: 16Mi
+        limits:
+          cpu: 50m
+          memory: 32Mi
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: false
+        capabilities:
+          drop: ["ALL"]
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+  volumes:
+    - name: data
+      persistentVolumeClaim:
+        claimName: st-pvc-zrs
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Scenario 4 — StatefulSet with WaitForFirstConsumer + single-zone allowedTopologies
+# Go test: "should run on a new node without 6+ minute delays when disrupted"
+#
+# The test validates that Azure Disk detach+attach completes in < 2 minutes
+# after a node is disrupted. Pre-fix, Kubernetes waited 6+ minutes for a
+# force-detach before allowing the volume to attach elsewhere.
+#
+# To simulate disruption (manual analog of env.ExpectDeleted(nodeClaim)):
+#   kubectl delete pod -n st-statefulset st-0
+# The pod should reach Running again within ~30 seconds.
+#
+# IMPORTANT: replace <ZONE-1> with your cluster's first zone name.
+# ═══════════════════════════════════════════════════════════════════════════
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: st-statefulset
+  labels:
+    suite: storage-test
+
+---
+# allowedTopologies pins provisioning to a single zone so the PV and node
+# are always in the same zone, enabling fast reattach after disruption.
+# Uses the CSI driver's topology key (topology.disk.csi.azure.com/zone).
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: st-sc-stateful
+provisioner: disk.csi.azure.com
+parameters:
+  skuName: Premium_LRS
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+allowedTopologies:
+  - matchLabelExpressions:
+      - key: topology.disk.csi.azure.com/zone   # CSI driver topology key
+        values:
+          - eastus2-1
+
+---
+# StatefulSet: volumeClaimTemplates gives the pod its own PVC (data-st-0).
+# Volume is mounted at /usr/share to mirror the karpenter test exactly.
+# replicas: 1 because the test checks exactly 1 NodeClaim is created.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: st
+  namespace: st-statefulset
+  labels:
+    suite: storage-test
+    scenario: statefulset
+spec:
+  serviceName: st
+  replicas: 1
+  selector:
+    matchLabels:
+      app: st
+  template:
+    metadata:
+      labels:
+        app: st
+        suite: storage-test
+        scenario: statefulset
+    spec:
+      containers:
+        - name: writer
+          image: busybox:1.37
+          command: ["/bin/sh", "-c", "echo ok > /usr/share/ok && sleep infinity"]
+          volumeMounts:
+            - name: data
+              mountPath: /usr/share
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 50m
+              memory: 32Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop: ["ALL"]
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: st-sc-stateful
+        resources:
+          requests:
+            storage: 10Gi
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Scenario 5 — Ephemeral storage (emptyDir + memory-backed emptyDir)
+# Go tests: "should run a pod with ephemeral storage that uses emptyDir"
+#           "should run a pod with ephemeral storage that uses memory-backed emptyDir"
+#
+# requests.ephemeral-storage signals NAP to provision a node with enough
+# local ephemeral disk. No PVC or StorageClass needed.
+# ═══════════════════════════════════════════════════════════════════════════
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: st-emptydir
+  labels:
+    suite: storage-test
+
+---
+# emptyDir: node-local ephemeral storage backed by the node's disk.
+# Go test requests 1Gi ephemeral-storage so NAP accounts for it during
+# node sizing.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: st-pod-emptydir
+  namespace: st-emptydir
+  labels:
+    suite: storage-test
+    scenario: emptydir
+spec:
+  containers:
+    - name: writer
+      image: busybox:1.37
+      command: ["/bin/sh", "-c", "echo ok > /mnt/emptydir/ok && sleep infinity"]
+      volumeMounts:
+        - name: emptydir-volume
+          mountPath: /mnt/emptydir
+      resources:
+        requests:
+          cpu: 10m
+          memory: 16Mi
+          ephemeral-storage: 1Gi
+        limits:
+          cpu: 50m
+          memory: 32Mi
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: false
+        capabilities:
+          drop: ["ALL"]
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+  volumes:
+    - name: emptydir-volume
+      emptyDir: {}
+
+---
+# memory-backed emptyDir: stored in RAM (tmpfs). SizeLimit caps memory usage.
+# NAP must provision a node with enough allocatable memory.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: st-pod-emptydir-mem
+  namespace: st-emptydir
+  labels:
+    suite: storage-test
+    scenario: emptydir-memory
+spec:
+  containers:
+    - name: writer
+      image: busybox:1.37
+      command: ["/bin/sh", "-c", "echo ok > /mnt/emptydir-memory/ok && sleep infinity"]
+      volumeMounts:
+        - name: emptydir-memory-volume
+          mountPath: /mnt/emptydir-memory
+      resources:
+        requests:
+          cpu: 10m
+          memory: 128Mi
+        limits:
+          cpu: 50m
+          memory: 256Mi
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: false
+        capabilities:
+          drop: ["ALL"]
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+  volumes:
+    - name: emptydir-memory-volume
+      emptyDir:
+        medium: Memory
+        sizeLimit: 100Mi

@@ -1,0 +1,25 @@
+# Version control
+.git
+.gitignore
+
+# IDE / OS
+.DS_Store
+.vscode/
+.idea/
+
+# Terraform state and credentials
+terraform/
+
+# Helm charts (not part of the binary build context)
+charts/
+
+# Kubernetes manifests
+deploy/
+
+# Go test cache and coverage
+**/*_test.go
+*.out
+*.prof
+
+# Local binaries
+bin/

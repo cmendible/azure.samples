@@ -1,0 +1,237 @@
+# deploy/webhook.yaml
+#
+# All-in-one deployment manifest for the PV Zone Fix mutating admission webhook.
+# Prerequisites:
+#   - cert-manager v1.15+ installed in the cluster
+#   - Update the Deployment image to point to your registry before applying.
+#
+# Apply with:
+#   kubectl apply -f deploy/webhook.yaml
+# ---------------------------------------------------------------------------
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: pv-zone-fix-webhook
+  labels:
+    app.kubernetes.io/name: pv-zone-fix-webhook
+    app.kubernetes.io/managed-by: kubectl
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: pv-zone-fix-webhook
+  namespace: pv-zone-fix-webhook
+  labels:
+    app.kubernetes.io/name: pv-zone-fix-webhook
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: pv-zone-fix-webhook
+  labels:
+    app.kubernetes.io/name: pv-zone-fix-webhook
+rules:
+  - apiGroups: [""]
+    resources: ["persistentvolumes"]
+    verbs: ["get", "list", "watch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: pv-zone-fix-webhook
+  labels:
+    app.kubernetes.io/name: pv-zone-fix-webhook
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: pv-zone-fix-webhook
+subjects:
+  - kind: ServiceAccount
+    name: pv-zone-fix-webhook
+    namespace: pv-zone-fix-webhook
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pv-zone-fix-webhook
+  namespace: pv-zone-fix-webhook
+  labels:
+    app.kubernetes.io/name: pv-zone-fix-webhook
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: pv-zone-fix-webhook
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: pv-zone-fix-webhook
+    spec:
+      serviceAccountName: pv-zone-fix-webhook
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: webhook
+          # TODO: replace with your registry image
+          image: acrnapwebhook.azurecr.io/pv-zone-fix-webhook:latest
+          imagePullPolicy: Always
+          ports:
+            - name: https
+              containerPort: 8443
+              protocol: TCP
+          env:
+            - name: DRY_RUN
+              value: "false"
+          volumeMounts:
+            - name: tls
+              mountPath: /tls
+              readOnly: true
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8443
+              scheme: HTTPS
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8443
+              scheme: HTTPS
+            initialDelaySeconds: 15
+            periodSeconds: 20
+      volumes:
+        - name: tls
+          secret:
+            secretName: pv-zone-fix-webhook-tls
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pv-zone-fix-webhook
+  namespace: pv-zone-fix-webhook
+  labels:
+    app.kubernetes.io/name: pv-zone-fix-webhook
+spec:
+  selector:
+    app.kubernetes.io/name: pv-zone-fix-webhook
+  ports:
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: https
+
+---
+# cert-manager: self-signed root ClusterIssuer
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: pv-zone-fix-selfsigned
+  labels:
+    app.kubernetes.io/name: pv-zone-fix-webhook
+spec:
+  selfSigned: {}
+
+---
+# cert-manager: intermediate CA Certificate (isCA: true)
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: pv-zone-fix-webhook-ca
+  namespace: pv-zone-fix-webhook
+  labels:
+    app.kubernetes.io/name: pv-zone-fix-webhook
+spec:
+  isCA: true
+  commonName: pv-zone-fix-webhook-ca
+  secretName: pv-zone-fix-webhook-ca-tls
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: pv-zone-fix-selfsigned
+    kind: ClusterIssuer
+    group: cert-manager.io
+
+---
+# cert-manager: namespace-scoped Issuer backed by the CA above
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: pv-zone-fix-webhook-ca
+  namespace: pv-zone-fix-webhook
+  labels:
+    app.kubernetes.io/name: pv-zone-fix-webhook
+spec:
+  ca:
+    secretName: pv-zone-fix-webhook-ca-tls
+
+---
+# cert-manager: TLS Certificate for the webhook Service
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: pv-zone-fix-webhook-cert
+  namespace: pv-zone-fix-webhook
+  labels:
+    app.kubernetes.io/name: pv-zone-fix-webhook
+spec:
+  dnsNames:
+    - pv-zone-fix-webhook.pv-zone-fix-webhook.svc
+    - pv-zone-fix-webhook.pv-zone-fix-webhook.svc.cluster.local
+  secretName: pv-zone-fix-webhook-tls
+  issuerRef:
+    name: pv-zone-fix-webhook-ca
+    kind: Issuer
+    group: cert-manager.io
+
+---
+# cert-manager injects the CA bundle automatically via the annotation below.
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: pv-zone-fix-webhook
+  labels:
+    app.kubernetes.io/name: pv-zone-fix-webhook
+  annotations:
+    # cert-manager automatically injects caBundle from this Certificate's CA.
+    cert-manager.io/inject-ca-from: pv-zone-fix-webhook/pv-zone-fix-webhook-cert
+webhooks:
+  - name: pv-zone-fix.azure.microsoft.com
+    admissionReviewVersions: ["v1"]
+    sideEffects: None
+    failurePolicy: Ignore
+    clientConfig:
+      service:
+        name: pv-zone-fix-webhook
+        namespace: pv-zone-fix-webhook
+        path: /mutate
+        port: 443
+    rules:
+      - operations: ["CREATE", "UPDATE"]
+        apiGroups: [""]
+        apiVersions: ["v1"]
+        resources: ["persistentvolumes"]
+        scope: "Cluster"
