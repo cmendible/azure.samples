@@ -1,0 +1,19 @@
+{
+  "version": "1.0.0",
+  "rules": [
+    {
+      "id": "rule-001",
+      "name": "high-score-threshold",
+      "condition": "score > 90",
+      "action": "flag_for_review",
+      "priority": 1
+    },
+    {
+      "id": "rule-002",
+      "name": "inactive-user-check",
+      "condition": "active == false",
+      "action": "send_notification",
+      "priority": 2
+    }
+  ]
+}

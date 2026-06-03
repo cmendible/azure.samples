@@ -1,0 +1,14 @@
+[
+  {
+    "id": "record-001",
+    "category": "A",
+    "value": 42.5,
+    "tags": ["alpha", "beta"]
+  },
+  {
+    "id": "record-002",
+    "category": "B",
+    "value": 17.3,
+    "tags": ["gamma"]
+  }
+]

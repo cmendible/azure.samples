@@ -1,0 +1,83 @@
+---
+# deployment.yaml — deploys the engine and mounts the OCI content image
+# as a read-only volume using the Kubernetes image volumes feature (stable in 1.36).
+#
+# Prerequisites:
+#   - AKS cluster running Kubernetes >= 1.36
+#   - ACR attached to the cluster (AcrPull role assigned to kubelet identity)
+#   - Both images pushed to ACR (see Makefile targets)
+#
+# Replace <ACR_LOGIN_SERVER> with the value from `terraform output acr_login_server`
+# or set IMAGE_REGISTRY in the Makefile.
+#
+# To pin by digest (recommended for production):
+#   image.reference: <acr>.azurecr.io/project-content@sha256:<digest>
+# Get the digest after pushing:
+#   az acr repository show --name <acr> --image project-content:v1.0.0 --query digest -o tsv
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-engine
+  labels:
+    app: demo-engine
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: demo-engine
+  template:
+    metadata:
+      labels:
+        app: demo-engine
+    spec:
+      # Image volumes mount the OCI image filesystem directly into the pod.
+      # No init container, no emptyDir copy — the kubelet mounts it read-only.
+      volumes:
+        - name: project-content
+          image:
+            reference: <ACR_LOGIN_SERVER>/project-content:v1.0.0
+            pullPolicy: Always
+
+      containers:
+        - name: engine
+          image: <ACR_LOGIN_SERVER>/engine:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: CONTENT_PATH
+              value: /content
+          volumeMounts:
+            - name: project-content
+              mountPath: /content
+              readOnly: true
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 128Mi
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-engine
+spec:
+  selector:
+    app: demo-engine
+  ports:
+    - port: 80
+      targetPort: 8080
+  type: ClusterIP

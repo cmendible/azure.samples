@@ -1,0 +1,7 @@
+{
+  "app": "demo-engine",
+  "version": "1.0.0",
+  "log_level": "info",
+  "max_workers": 4,
+  "timeout_seconds": 30
+}
