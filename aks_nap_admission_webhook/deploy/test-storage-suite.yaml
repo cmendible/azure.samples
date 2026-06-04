@@ -10,8 +10,8 @@
 # │      '{range .items[*]}{.metadata.labels.topology\.kubernetes\.io/zone}    │
 # │      {"\n"}{end}' | sort -u                                                 │
 # │                                                                             │
-# │    <ZONE-1>  e.g. eastus2-1  (any zone)                                    │
-# │    <ZONE-2>  e.g. eastus2-2  (MUST be different from <ZONE-1>)             │
+# │    <ZONE-1>  e.g. eastasia-1  (any zone)                                    │
+# │    <ZONE-2>  e.g. eastasia-2  (MUST be different from <ZONE-1>)             │
 # └─────────────────────────────────────────────────────────────────────────────┘
 #
 # Scenarios (each isolated in its own namespace):
@@ -171,7 +171,7 @@ allowedTopologies:
   - matchLabelExpressions:
       - key: topology.disk.csi.azure.com/zone   # CSI driver topology key
         values:
-          - eastus2-1
+          - eastasia-1
 
 ---
 apiVersion: v1
@@ -313,7 +313,7 @@ metadata:
     scenario: zrs-zone-pin
 spec:
   nodeSelector:
-    topology.kubernetes.io/zone: eastus2-2
+    topology.kubernetes.io/zone: eastasia-3
   containers:
     - name: writer
       image: busybox:1.37
@@ -384,7 +384,7 @@ allowedTopologies:
   - matchLabelExpressions:
       - key: topology.disk.csi.azure.com/zone   # CSI driver topology key
         values:
-          - eastus2-1
+          - eastasia-1
 
 ---
 # StatefulSet: volumeClaimTemplates gives the pod its own PVC (data-st-0).

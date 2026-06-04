@@ -30,6 +30,7 @@ resource "azurerm_kubernetes_cluster" "main" {
     vm_size                      = var.system_node_pool_vm_size
     node_count                   = var.system_node_pool_count
     only_critical_addons_enabled = true
+    zones                        = var.system_node_pool_zones
 
     upgrade_settings {
       max_surge = "33%"

@@ -7,7 +7,7 @@ variable "resource_group_name" {
 variable "location" {
   description = "Azure region for all resources."
   type        = string
-  default     = "eastus2"
+  default     = "eastasia"
 }
 
 variable "cluster_name" {
@@ -32,6 +32,12 @@ variable "system_node_pool_count" {
   description = "Initial node count for the system node pool."
   type        = number
   default     = 2
+}
+
+variable "system_node_pool_zones" {
+  description = "Availability zones for the system node pool. Set to [\"1\", \"2\", \"3\"] to enable multi-zone NAP scheduling (required for the ZRS zone-pin webhook test)."
+  type        = list(string)
+  default     = ["1", "2", "3"]
 }
 
 variable "acr_name" {
